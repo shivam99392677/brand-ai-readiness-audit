@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "brand-ai-readiness-audit",
-  "version": "0.1.0",
-  "description": "Agent Skill Marketplace package for auditing brand websites across AI discoverability, fact quality, freshness, entity identity, structured data, crawl/render accessibility, and on-site AI engagement.",
-  "author": "Shivam",
+  "version": "0.2.0",
+  "description": "Agent Skill Marketplace package for auditing brand websites across Off-site Discoverability (SEO, AI/GEO, Schema, Crawlability) and On-site Engagement (Clarity, Navigation, UX, Trust, AI-Agent protocols) using URL-only input.",
+  "author": "Ankit Kumar, Shivam",
   "license": "MIT",
   "entrypoint": "skills/audit-orchestrator/SKILL.md",
   "skills": [
@@ -12,49 +12,49 @@
       "name": "Audit Orchestrator Skill",
       "path": "skills/audit-orchestrator/SKILL.md",
       "isEntrypoint": true,
-      "description": "Master orchestrator skill coordinating end-to-end brand AI readiness audits by invoking specialized audit skills."
+      "description": "Master orchestrator skill coordinating end-to-end brand AI readiness audits across Off-site Discoverability and On-site Engagement using URL-only input."
     },
     {
       "id": "crawl-render-audit",
       "name": "Crawl & Render Audit Skill",
       "path": "skills/crawl-render-audit/SKILL.md",
       "isEntrypoint": false,
-      "description": "Audits website robots.txt, sitemaps, HTTP headers, DOM rendering, and crawler accessibility for AI user agents."
+      "description": "Audits website robots.txt AI bot rules, HTTP headers, DOM rendering delta, sitemaps, canonicals, and Core Web Vitals."
     },
     {
       "id": "structured-data-audit",
       "name": "Structured Data Audit Skill",
       "path": "skills/structured-data-audit/SKILL.md",
       "isEntrypoint": false,
-      "description": "Validates Schema.org JSON-LD, Microdata, OpenGraph, and semantic markup for AI entity extraction."
+      "description": "Validates Schema.org JSON-LD, Microdata, OpenGraph, and semantic HTML markup for AI entity extraction."
     },
     {
       "id": "fact-quality-audit",
       "name": "Fact Quality Audit Skill",
       "path": "skills/fact-quality-audit/SKILL.md",
       "isEntrypoint": false,
-      "description": "Evaluates factual precision, claim verifiability, content clarity, and hallucination vulnerability across brand assets."
+      "description": "Extracts atomic propositions, checks cross-page contradictions, and evaluates content clarity and hallucination vulnerability."
     },
     {
       "id": "freshness-corroboration",
       "name": "Freshness & Corroboration Skill",
       "path": "skills/freshness-corroboration/SKILL.md",
       "isEntrypoint": false,
-      "description": "Checks timestamp metadata, update cadence, external citation consistency, and cross-source corroboration."
+      "description": "Checks timestamp metadata, update cadence, stale core pages, and cross-source external corroboration."
     },
     {
       "id": "entity-identity-audit",
       "name": "Entity Identity & Consistency Skill",
       "path": "skills/entity-identity-audit/SKILL.md",
       "isEntrypoint": false,
-      "description": "Audits brand entity attributes, NAP (Name, Address, Phone) consistency, Knowledge Graph alignment, and canonical branding."
+      "description": "Derives canonical brand identity and audits cross-page NAP uniformity, sameAs links, and Knowledge Graph alignment."
     },
     {
       "id": "engagement-audit",
-      "name": "On-Site AI Engagement Audit Skill",
+      "name": "On-Site Engagement Audit Skill",
       "path": "skills/engagement-audit/SKILL.md",
       "isEntrypoint": false,
-      "description": "Assesses on-site search readiness, conversational endpoint availability, and interactive AI agent interoperability."
+      "description": "Evaluates comprehensive on-site visitor and agent engagement across clarity, scannability, navigation, CTA journeys, mobile UX, trust, accessibility, and AI-agent protocols."
     }
   ]
 }

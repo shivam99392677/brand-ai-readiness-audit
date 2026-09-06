@@ -1,6 +1,6 @@
 # Brand AI Readiness Audit Default Configuration
 
-version: "0.1.0"
+version: "0.2.0"
 
 crawl:
   max_depth: 3
@@ -14,22 +14,45 @@ crawl:
 crawler:
   user_agents:
     - "GPTBot"
+    - "OAI-SearchBot"
     - "ClaudeBot"
     - "PerplexityBot"
     - "Google-Extended"
     - "Bytespider"
+    - "Amazonbot"
   timeout_seconds: 30
   max_depth: 3
   render_js: true
+  viewport:
+    desktop: { width: 1440, height: 900 }
+    mobile: { width: 390, height: 844 }
 
-scoring_weights:
-  crawl_render_accessibility: 0.20
-  structured_data: 0.20
-  fact_quality: 0.20
-  freshness_corroboration: 0.15
-  entity_identity: 0.15
-  engagement_readiness: 0.10
+dimensions:
+  off_site_discoverability:
+    weight: 0.50
+    sub_pillars:
+      on_page_seo: 0.18
+      technical_seo_crawlability: 0.20
+      off_page_authority: 0.12
+      ai_geo_discoverability: 0.25
+      machine_readability_entity: 0.15
+      freshness_corroboration: 0.10
+
+  on_site_engagement:
+    weight: 0.50
+    sub_pillars:
+      first_visit_clarity: 0.18
+      content_scannability: 0.12
+      navigation_findability: 0.14
+      cta_user_journey: 0.15
+      performance_stability: 0.12
+      mobile_ux: 0.10
+      trust_credibility: 0.08
+      observable_accessibility: 0.06
+      ai_agent_readiness: 0.05
 
 thresholds:
-  critical_severity_cap: 40
-  stale_content_months: 12
+  critical_severity_penalty_cap: 40
+  stale_content_months: 18
+  min_touch_target_px: 48
+  min_wcag_contrast_ratio: 4.5

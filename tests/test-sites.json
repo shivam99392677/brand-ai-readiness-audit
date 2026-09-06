@@ -1,27 +1,23 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Test Sites Registry",
-  "description": "Scaffolding registry of target web properties for AI readiness audit benchmarking.",
+  "description": "Calibration set. Diverse archetypes. Do not overfit. example.com is not an e-commerce brand.",
   "sites": [
     {
-      "id": "example-brand-001",
-      "name": "Example E-Commerce Brand",
-      "url": "https://example.com",
-      "category": "e-commerce",
-      "expected_challenges": [
-        "CSR rendering delay",
-        "Missing Product JSON-LD"
-      ]
+      "id": "gov-content",
+      "url": "https://www.nasa.gov",
+      "archetype": "content-heavy",
+      "notes": "Strong entity + dates. Useful for freshness and identity, not as a product-schema target."
     },
     {
-      "id": "example-brand-002",
-      "name": "Example SaaS Platform",
-      "url": "https://example.org",
-      "category": "saas",
-      "expected_challenges": [
-        "robots.txt AI bot disallow",
-        "Missing llms.txt"
-      ]
+      "id": "docs-saas",
+      "url": "https://docs.github.com",
+      "archetype": "documentation",
+      "notes": "Deep URLs, breadcrumbs, nav. Engagement checks should fire on interior pages."
+    },
+    {
+      "id": "institutional",
+      "url": "https://www.whitehouse.gov",
+      "archetype": "institutional",
+      "notes": "NAP / Organization identity. Not a storefront."
     }
   ]
 }
