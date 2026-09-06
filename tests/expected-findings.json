@@ -1,22 +1,42 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Expected Audit Findings Benchmark Schema",
-  "description": "Scaffolding structure for expected evidence and audit findings used in automated evaluation.",
+  "description": "Ground truth evaluation benchmark schema for automated scoring and finding verification across both audit dimensions.",
   "benchmarks": [
     {
       "site_id": "example-brand-001",
-      "expected_category_scores": {
-        "crawl_render_accessibility": 85,
-        "structured_data": 40,
-        "fact_quality": 75,
-        "freshness_corroboration": 60,
-        "entity_identity": 90,
-        "engagement_readiness": 30
+      "expected_scores": {
+        "overall_score": 70,
+        "off_site_discoverability": {
+          "total": 68,
+          "sub_scores": {
+            "on_page_seo": 75,
+            "technical_seo_crawlability": 85,
+            "off_page_authority": "unavailable",
+            "ai_geo_discoverability": 60,
+            "machine_readability_entity": 40,
+            "freshness_corroboration": 80
+          }
+        },
+        "on_site_engagement": {
+          "total": 72,
+          "sub_scores": {
+            "first_visit_clarity": 80,
+            "content_scannability": 75,
+            "navigation_findability": 85,
+            "cta_user_journey": 70,
+            "performance_stability": 65,
+            "mobile_ux": 80,
+            "trust_credibility": 70,
+            "observable_accessibility": 75,
+            "ai_agent_readiness": 45
+          }
+        }
       },
-      "expected_findings_keys": [
-        "MISSING_SCHEMA_PRODUCT",
-        "MISSING_LLMS_TXT",
-        "EXPLICIT_BOT_ALLOW"
+      "expected_finding_codes": [
+        "FIND-SCHEMA-PRODUCT-MISSING",
+        "FIND-AGENT-LLMSTXT-MISSING",
+        "FIND-CRAWL-BOT-ALLOWED"
       ]
     }
   ]

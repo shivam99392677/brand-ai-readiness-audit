@@ -1,39 +1,43 @@
 # Audit Evaluation & Verification Plan
 
-This document outlines the testing methodology, ground truth benchmarks, and evaluation metrics used to validate the accuracy of the Brand AI Readiness Audit package.
+This document outlines the testing methodology, ground truth benchmarks, and evaluation metrics used to validate the accuracy, reproducibility, and evidence grounding of the **Brand AI Readiness Audit** package.
 
 ---
 
-## 1. Evaluation Goals
+## 1. Core Evaluation Goals
 
-1. **Deterministic Accuracy:** Ensure 100% precision on rule-based checks (`robots.txt` parsing, JSON-LD syntax validation, header inspection).
-2. **LLM Evidence Grounding:** Verify that 100% of LLM reasoning findings map back to valid raw evidence IDs.
-3. **Reproducibility:** Guarantee identical scoring outputs when evaluating static DOM/header snapshot sets.
-4. **False-Positive Minimization:** Benchmark hallucination flags and schema error flags against human expert audit baselines.
+1. **Deterministic Accuracy:** Ensure 100% precision on rule-based checks (`robots.txt` parsing, JSON-LD syntax validation, HTTP header inspection, sitemap status verification).
+2. **LLM Evidence Grounding:** Verify that 100% of LLM reasoning findings map back to valid raw Evidence IDs in the Evidence Store (Zero Un-anchored Claims).
+3. **URL-Only Context Derivation Accuracy:** Benchmark the Automated Context Discovery Engine against known ground-truth brand profiles (name, offerings, value proposition, test query relevance).
+4. **Reproducibility:** Guarantee identical deterministic scoring outputs when evaluating static DOM/header snapshot sets.
+5. **Missing Evidence Protocol Compliance:** Verify that lack of observable third-party authority data is marked as `Unknown / Unavailable` rather than penalizing sites with 0/100 scores.
+6. **False-Positive Minimization:** Benchmark hallucination flags, schema warnings, and engagement friction against human expert baseline audits.
 
 ---
 
-## 2. Benchmark Dataset (`test-sites.json`)
+## 2. Benchmark Target Dataset (`tests/test-sites.json`)
 
-The test suite evaluates a curated list of diverse website architectures:
-- **Client-Side Rendered (CSR):** React/Vue web applications relying on dynamic hydration.
-- **Server-Side Rendered (SSR):** Static and traditional CMS sites with immediate HTML payloads.
-- **E-Commerce Portals:** High-density product pages with complex JSON-LD markup.
-- **Enterprise SaaS:** Documentation-heavy sites with developer endpoints and security policies.
+The test suite evaluates a curated list of diverse website architectures across both primary dimensions:
+- **Client-Side Rendered (CSR):** Dynamic Single-Page Applications (React, Vue) to evaluate DOM delta and JS rendering resilience.
+- **Server-Side Rendered (SSR):** Static blogs and CMS websites to test rapid text extraction and metadata precision.
+- **E-Commerce Portals:** High-density catalog sites to validate `Product` / `Offer` schema compliance and CTA checkout journey integrity.
+- **Enterprise B2B SaaS:** Technical platforms to test `/llms.txt`, OpenAPI discoverability, security disclosures, and navigation hierarchy.
 
 ---
 
 ## 3. Verification Metrics
 
-- **Precision & Recall on Skill Flags:** $\text{Precision} = \frac{\text{True Positive Findings}}{\text{Total Flagged Findings}}$
-- **Evidence Traceability Index:** Percentage of generated finding cards that contain valid, extractable evidence citations.
-- **Schema Validation Match Rate:** Agreement percentage between internal Schema checkers and official Schema.org API results.
+- **Evidence Traceability Index (ETI)**:
+  $$\text{ETI} = \frac{\text{Findings with Valid Evidence IDs}}{\text{Total Flagged Findings}} \quad (\text{Target: } 100\%)$$
+- **Score Calibration Error (MAE)**: Mean Absolute Error between automated scores and human expert panel benchmark scores across both dimensions (Off-site Discoverability & On-site Engagement).
+- **Precision on Factual Contradictions**: Precision rate in flagging genuine factual discrepancies vs marketing hyperbole.
+- **Schema Validation Match Rate**: Agreement percentage between internal Schema checkers and official Schema.org validation standards.
 
 ---
 
 ## 4. Execution Workflow
 
 ```bash
-# Example test execution command (scaffolding placeholder)
+# Run ground-truth benchmark suite (Phase 5 implementation)
 pytest tests/
 ```
