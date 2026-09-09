@@ -185,7 +185,42 @@ class GeneralPageHTMLParser(HTMLParser):
 
         self._text_chunks.append(data)
 
+    def flush_open_buffers(self):
+        """Flushes any open tag buffers if tags were not cleanly closed in malformed HTML."""
+        if self._current_heading_tag and self._heading_buffer:
+            h_text = "".join(self._heading_buffer).strip()
+            if h_text:
+                self.headings.append({"tag": self._current_heading_tag, "text": h_text})
+            self._current_heading_tag = None
+            self._heading_buffer = []
+
+        if self._in_paragraph and self._paragraph_buffer:
+            p_text = "".join(self._paragraph_buffer).strip()
+            if p_text:
+                self.paragraphs.append(p_text)
+            self._in_paragraph = False
+            self._paragraph_buffer = []
+
+        if self._in_blockquote and self._blockquote_buffer:
+            bq_text = "".join(self._blockquote_buffer).strip()
+            if bq_text:
+                self.blockquotes.append(bq_text)
+            self._in_blockquote = False
+            self._blockquote_buffer = []
+
+        if self._in_caption and self._caption_buffer:
+            cap_text = "".join(self._caption_buffer).strip()
+            if cap_text:
+                self.captions.append(cap_text)
+            self._in_caption = False
+            self._caption_buffer = []
+
+    def close(self):
+        super().close()
+        self.flush_open_buffers()
+
     def get_text(self) -> Tuple[str, str]:
+        self.flush_open_buffers()
         raw_text = "".join(self._text_chunks)
         normalized = " ".join(raw_text.split())
         return raw_text, normalized
@@ -196,6 +231,7 @@ def extract_page_content(html_content: str, url: str) -> Dict[str, Any]:
     parser = GeneralPageHTMLParser()
     try:
         parser.feed(html_content)
+        parser.close()
     except Exception:
         pass
 

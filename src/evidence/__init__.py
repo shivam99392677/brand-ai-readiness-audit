@@ -16,9 +16,19 @@ from src.evidence.models import (
     UserAgentRuleGroup,
     WebsiteEvidence,
 )
+from src.shared.evidence_schema import (
+    CanonicalEvidence,
+    EvidenceType,
+    ExtractionError,
+    ExtractionResult,
+)
 
 __all__ = [
     "Provenance",
+    "CanonicalEvidence",
+    "EvidenceType",
+    "ExtractionError",
+    "ExtractionResult",
     "UserAgentRuleGroup",
     "RobotsEvidence",
     "SitemapEvidence",

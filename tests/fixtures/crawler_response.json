@@ -1,0 +1,405 @@
+{
+  "start_url": "https://example.com/",
+  "normalized_start_url": "https://example.com/",
+  "pages_discovered": 5,
+  "pages_crawled": 3,
+  "max_depth": 2,
+  "truncated": true,
+  "truncation_reason": "max_pages_limit_reached (3/3)",
+  "crawl_metadata": {
+    "same_domain_only": true,
+    "user_agent": "AIReadinessAudit/0.1.0",
+    "request_timeout_seconds": 3.0,
+    "duration_seconds": 1.45
+  },
+  "robots": {
+    "url": "https://example.com/robots.txt",
+    "available": true,
+    "status_code": 200,
+    "user_agent_groups": [
+      {
+        "user_agents": ["*"],
+        "allow": ["/public/"],
+        "disallow": ["/admin/", "/private/"],
+        "crawl_delay": 1.0
+      },
+      {
+        "user_agents": ["GPTBot", "ClaudeBot", "PerplexityBot"],
+        "allow": ["/public/", "/docs/"],
+        "disallow": ["/restricted/"],
+        "crawl_delay": 0.5
+      }
+    ],
+    "sitemaps_declared": [
+      "https://example.com/sitemap.xml"
+    ],
+    "parse_errors": []
+  },
+  "sitemaps": [
+    {
+      "url": "https://example.com/sitemap.xml",
+      "status_code": 200,
+      "type": "urlset",
+      "entries": [
+        {
+          "url": "https://example.com/",
+          "lastmod": "2026-02-15"
+        },
+        {
+          "url": "https://example.com/about",
+          "lastmod": "2026-02-10"
+        },
+        {
+          "url": "https://example.com/products/ai-platform",
+          "lastmod": "2026-01-20"
+        }
+      ],
+      "sitemap_indices": [],
+      "parse_errors": []
+    }
+  ],
+  "discovered_urls": [
+    {
+      "url": "https://example.com/",
+      "discovered_from": null,
+      "anchor_text": null,
+      "discovery_method": "start_url"
+    },
+    {
+      "url": "https://example.com/about",
+      "discovered_from": "https://example.com/",
+      "anchor_text": "About Acme Corp",
+      "discovery_method": "html_link"
+    },
+    {
+      "url": "https://example.com/products/ai-platform",
+      "discovered_from": "https://example.com/",
+      "anchor_text": "AI Platform",
+      "discovery_method": "html_link"
+    },
+    {
+      "url": "https://example.com/pricing",
+      "discovered_from": "https://example.com/",
+      "anchor_text": "Enterprise Pricing",
+      "discovery_method": "html_link"
+    },
+    {
+      "url": "https://example.com/contact",
+      "discovered_from": "https://example.com/about",
+      "anchor_text": "Get in Touch",
+      "discovery_method": "html_link"
+    }
+  ],
+  "pages": [
+    {
+      "url": "https://example.com/",
+      "final_url": "https://example.com/",
+      "depth": 0,
+      "status": "success",
+      "status_code": 200,
+      "content_type": "text/html; charset=utf-8",
+      "discovery_source": "start_url",
+      "title": "Acme Corp — Next-Gen AI Brand Intelligence",
+      "meta_description": "Acme Corp empowers enterprises with brand discovery and readiness for Generative AI engines.",
+      "canonical_url": "https://example.com/",
+      "language": "en",
+      "charset": "utf-8",
+      "word_count": 240,
+      "headings": [
+        {"tag": "h1", "text": "Empowering Brands for the AI-First Web"},
+        {"tag": "h2", "text": "Core AI Readiness Features"},
+        {"tag": "h3", "text": "Structured Data Extraction"}
+      ],
+      "paragraphs": [
+        "Acme Corp builds the world's most advanced autonomous auditing engine for brand visibility across LLM ecosystems.",
+        "Contact our executive team at enterprise@example.com or call +1-800-555-0144.",
+        "Published on Feb 15, 2026."
+      ],
+      "lists": [
+        [
+          "Generative Engine Optimization (GEO)",
+          "Direct Answer Readiness",
+          "Automated Knowledge Graph Sync"
+        ]
+      ],
+      "tables": [
+        {
+          "rows": [
+            ["Feature", "Supported Bots", "Latency"],
+            ["GEO Indexing", "GPTBot, ClaudeBot", "< 200ms"]
+          ]
+        }
+      ],
+      "blockquotes": [
+        "The standard for modern brand discoverability."
+      ],
+      "captions": [
+        "Figure 1: Acme AI Engine High-Level Pipeline Architecture"
+      ],
+      "links": [
+        {
+          "href": "https://example.com/about",
+          "source_page": "https://example.com/",
+          "anchor_text": "About Acme Corp",
+          "is_internal": true,
+          "rel": null,
+          "target": null
+        },
+        {
+          "href": "https://example.com/downloads/whitepaper.pdf",
+          "source_page": "https://example.com/",
+          "anchor_text": "Download Technical Whitepaper (PDF)",
+          "is_internal": true,
+          "rel": "noopener",
+          "target": "_blank"
+        },
+        {
+          "href": "https://www.wikidata.org/wiki/Q12345678",
+          "source_page": "https://example.com/",
+          "anchor_text": "Wikidata Knowledge Entity",
+          "is_internal": false,
+          "rel": "nofollow",
+          "target": "_blank"
+        }
+      ],
+      "internal_links": [
+        "https://example.com/about",
+        "https://example.com/downloads/whitepaper.pdf"
+      ],
+      "external_links": [
+        "https://www.wikidata.org/wiki/Q12345678"
+      ],
+      "images": [
+        {
+          "declared_url": "/assets/hero-banner.webp",
+          "resolved_url": "https://example.com/assets/hero-banner.webp",
+          "url": "https://example.com/assets/hero-banner.webp",
+          "source_page": "https://example.com/",
+          "source_type": "img",
+          "alt": "Acme AI Architecture Diagram",
+          "title": "Architecture Overview",
+          "declared_width": 1200,
+          "declared_height": 630,
+          "format": "webp",
+          "caption": "Figure 1: Acme AI Engine High-Level Pipeline Architecture",
+          "is_tracking_or_icon": false,
+          "filter_reason": null
+        },
+        {
+          "declared_url": "/pixel.gif",
+          "resolved_url": "https://example.com/pixel.gif",
+          "url": "https://example.com/pixel.gif",
+          "source_page": "https://example.com/",
+          "source_type": "img",
+          "alt": "tracking",
+          "declared_width": 1,
+          "declared_height": 1,
+          "format": "gif",
+          "is_tracking_or_icon": true,
+          "filter_reason": "dimensions_<=_10px"
+        }
+      ],
+      "forms": [
+        {
+          "source_page": "https://example.com/",
+          "action": "https://example.com/api/request-audit",
+          "method": "post",
+          "inputs": [
+            {
+              "input_type": "text",
+              "name": "company_name",
+              "id": "company",
+              "placeholder": "Enter your company name"
+            },
+            {
+              "input_type": "email",
+              "name": "work_email",
+              "id": "email",
+              "placeholder": "you@company.com"
+            }
+          ],
+          "buttons": [
+            "Request Audit Demo"
+          ]
+        }
+      ],
+      "documents": [
+        {
+          "url": "https://example.com/downloads/whitepaper.pdf",
+          "source_page": "https://example.com/",
+          "filename": "whitepaper.pdf",
+          "file_type": "pdf",
+          "anchor_text": "Download Technical Whitepaper (PDF)"
+        }
+      ],
+      "robots_directives": {
+        "x_robots_tag": "index, follow"
+      },
+      "structured_data": {
+        "detected_jsonld_count": 2,
+        "detected_types": ["Organization", "WebSite"],
+        "opengraph_tags_count": 4,
+        "microdata_count": 0,
+        "parse_errors": []
+      },
+      "jsonld_raw_blocks": [
+        "{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"Organization\",\n  \"name\": \"Acme Corp\",\n  \"url\": \"https://example.com\",\n  \"logo\": \"https://example.com/logo.png\",\n  \"sameAs\": [\n    \"https://twitter.com/AcmeCorp\",\n    \"https://www.wikidata.org/wiki/Q12345678\",\n    \"https://www.linkedin.com/company/acme-corp\"\n  ],\n  \"telephone\": \"+1-800-555-0144\",\n  \"email\": \"enterprise@example.com\",\n  \"address\": {\n    \"@type\": \"PostalAddress\",\n    \"streetAddress\": \"100 Innovation Way\",\n    \"addressLocality\": \"San Francisco\",\n    \"addressRegion\": \"CA\",\n    \"postalCode\": \"94105\",\n    \"addressCountry\": \"US\"\n  }\n}",
+        "{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"WebSite\",\n  \"name\": \"Acme Corp Portal\",\n  \"url\": \"https://example.com\",\n  \"dateModified\": \"2026-02-15\"\n}"
+      ],
+      "meta_tags": [
+        {"name": "description", "content": "Acme Corp empowers enterprises with brand discovery and readiness for Generative AI engines."},
+        {"name": "robots", "content": "index, follow"},
+        {"property": "og:title", "content": "Acme Corp — Next-Gen AI Brand Intelligence"},
+        {"property": "og:description", "content": "Acme Corp empowers enterprises with brand discovery."},
+        {"property": "og:image", "content": "https://example.com/assets/og-preview.png"},
+        {"name": "twitter:card", "content": "summary_large_image"},
+        {"name": "twitter:site", "content": "@AcmeCorp"}
+      ],
+      "contacts": {
+        "emails": ["enterprise@example.com"],
+        "phone_numbers": ["+1-800-555-0144"],
+        "addresses": ["100 Innovation Way, San Francisco, CA 94105"],
+        "candidates": [
+          {
+            "value": "enterprise@example.com",
+            "candidate_type": "email"
+          },
+          {
+            "value": "+1-800-555-0144",
+            "candidate_type": "phone"
+          }
+        ],
+        "provenance_list": []
+      },
+      "dates": {
+        "visible_dates": ["Feb 15, 2026"],
+        "machine_dates": {
+          "dateModified": "2026-02-15"
+        },
+        "candidates": [
+          {
+            "value": "Feb 15, 2026",
+            "candidate_type": "visible_date"
+          }
+        ]
+      },
+      "text_extractability": {
+        "raw_text_length": 1450,
+        "normalized_text_length": 1320,
+        "word_boundary_collapse_detected": false,
+        "suspicious_tokens": []
+      },
+      "error": null,
+      "html_content": "<!DOCTYPE html><html lang=\"en\"><head><title>Acme Corp — Next-Gen AI Brand Intelligence</title><meta name=\"description\" content=\"Acme Corp empowers enterprises with brand discovery and readiness for Generative AI engines.\"><link rel=\"canonical\" href=\"https://example.com/\"><meta property=\"og:title\" content=\"Acme Corp — Next-Gen AI Brand Intelligence\"><script type=\"application/ld+json\">{\"@context\": \"https://schema.org\", \"@type\": \"Organization\", \"name\": \"Acme Corp\", \"url\": \"https://example.com\", \"telephone\": \"+1-800-555-0144\", \"email\": \"enterprise@example.com\", \"sameAs\": [\"https://www.wikidata.org/wiki/Q12345678\"]}</script></head><body><h1>Empowering Brands for the AI-First Web</h1><p>Contact our executive team at enterprise@example.com or call +1-800-555-0144.</p><p>Published on Feb 15, 2026.</p><figure><img src=\"/assets/hero-banner.webp\" alt=\"Acme AI Architecture Diagram\" width=\"1200\" height=\"630\" /><figcaption>Figure 1: Acme AI Engine High-Level Pipeline Architecture</figcaption></figure><img src=\"/pixel.gif\" alt=\"tracking\" width=\"1\" height=\"1\" /><h2>Core AI Readiness Features</h2><ul><li>Generative Engine Optimization (GEO)</li><li>Direct Answer Readiness</li></ul><blockquote>The standard for modern brand discoverability.</blockquote><table><tr><th>Feature</th><th>Supported Bots</th></tr><tr><td>GEO Indexing</td><td>GPTBot, ClaudeBot</td></tr></table><a href=\"https://example.com/about\">About Acme Corp</a><a href=\"https://example.com/downloads/whitepaper.pdf\">Download Technical Whitepaper (PDF)</a><a href=\"https://www.wikidata.org/wiki/Q12345678\" rel=\"nofollow\">Wikidata Knowledge Entity</a><form action=\"https://example.com/api/request-audit\" method=\"post\"><input type=\"text\" name=\"company_name\" placeholder=\"Enter your company name\" /><input type=\"email\" name=\"work_email\" placeholder=\"you@company.com\" /><input type=\"submit\" value=\"Request Audit Demo\" /></form></body></html>",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "last-modified": "Sun, 15 Feb 2026 12:00:00 GMT",
+        "cache-control": "public, max-age=3600",
+        "etag": "\"33a64df551425fcc55e4d42a148795d9f25f89d4\"",
+        "x-robots-tag": "index, follow",
+        "server": "nginx"
+      }
+    },
+    {
+      "url": "https://example.com/about",
+      "final_url": "https://example.com/about",
+      "depth": 1,
+      "status": "success",
+      "status_code": 200,
+      "content_type": "text/html; charset=utf-8",
+      "discovery_source": "html_link",
+      "title": "About Us — Acme Corp",
+      "meta_description": "Learn about Acme Corp's mission to make the web AI-ready.",
+      "canonical_url": "https://example.com/about",
+      "language": "en",
+      "charset": "utf-8",
+      "word_count": 180,
+      "headings": [
+        {"tag": "h1", "text": "About Acme Corp"},
+        {"tag": "h2", "text": "Our Mission"}
+      ],
+      "paragraphs": [
+        "Founded in 2020, Acme Corp is dedicated to open standards in AI discoverability and verifiable web data.",
+        "Last updated Jan 20, 2026."
+      ],
+      "lists": [],
+      "tables": [],
+      "blockquotes": [],
+      "captions": [],
+      "links": [
+        {
+          "href": "https://example.com/",
+          "source_page": "https://example.com/about",
+          "anchor_text": "Home",
+          "is_internal": true,
+          "rel": null,
+          "target": null
+        }
+      ],
+      "internal_links": ["https://example.com/"],
+      "external_links": [],
+      "images": [],
+      "forms": [],
+      "documents": [],
+      "robots_directives": {},
+      "structured_data": {
+        "detected_jsonld_count": 0,
+        "detected_types": [],
+        "opengraph_tags_count": 0,
+        "microdata_count": 0,
+        "parse_errors": []
+      },
+      "jsonld_raw_blocks": [],
+      "meta_tags": [
+        {"name": "description", "content": "Learn about Acme Corp's mission to make the web AI-ready."}
+      ],
+      "contacts": {
+        "emails": [],
+        "phone_numbers": [],
+        "addresses": [],
+        "candidates": [],
+        "provenance_list": []
+      },
+      "dates": {
+        "visible_dates": ["Jan 20, 2026"],
+        "machine_dates": {},
+        "candidates": []
+      },
+      "text_extractability": {
+        "raw_text_length": 800,
+        "normalized_text_length": 750,
+        "word_boundary_collapse_detected": false,
+        "suspicious_tokens": []
+      },
+      "error": null,
+      "html_content": null,
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "last-modified": "Tue, 20 Jan 2026 08:30:00 GMT"
+      }
+    }
+  ],
+  "failed_urls": [
+    {
+      "url": "https://example.com/broken-page",
+      "status_code": 404,
+      "error_reason": "HTTP 404 Not Found",
+      "discovered_from": "https://example.com/",
+      "anchor_text": "Broken Resource",
+      "discovery_method": "html_link"
+    }
+  ],
+  "skipped_urls": [
+    {
+      "url": "https://example.com/admin/settings",
+      "reason": "robots_disallowed"
+    }
+  ],
+  "resource_summary": {
+    "html_pages": 3,
+    "images": 2,
+    "pdf_documents": 1,
+    "other_documents": 0,
+    "forms": 1
+  }
+}
