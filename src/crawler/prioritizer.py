@@ -1,6 +1,6 @@
 """Deterministic URL priority scoring module."""
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 HIGH_VALUE_PATH_SIGNALS = {
@@ -17,7 +17,7 @@ LOW_VALUE_PATH_SIGNALS = {
 }
 
 
-def calculate_url_priority(url: str, anchor_text: Optional[str] = None) -> int:
+def calculate_url_priority(url: str, anchor_text: Optional[str] = None, **kwargs) -> int:
     """Computes a deterministic priority score for a URL based on path and anchor signals.
     
     Scores:
@@ -46,9 +46,17 @@ def calculate_url_priority(url: str, anchor_text: Optional[str] = None) -> int:
     return 10
 
 
-def sort_urls_by_priority(url_items: List[tuple]) -> List[tuple]:
-    """Sorts a list of (url, priority, depth, ...) items deterministically.
-    
-    Order: Priority descending, Depth ascending, URL length ascending, URL string ascending.
-    """
-    return sorted(url_items, key=lambda item: (-item[1], item[2], len(item[0]), item[0]))
+def sort_urls_by_priority(urls: Any, discovered_urls: Optional[Dict[str, Any]] = None) -> List[Any]:
+    """Sorts a list of URLs or (url, priority, depth, ...) items deterministically."""
+    if not urls:
+        return []
+    if isinstance(urls[0], str) and discovered_urls:
+        def key_func(u: str):
+            item = discovered_urls.get(u)
+            prio = getattr(item, "priority", 0) if item else 0
+            dp = getattr(item, "depth", 0) if item else 0
+            return (-prio, dp, len(u), u)
+        return sorted(urls, key=key_func)
+    if isinstance(urls[0], tuple):
+        return sorted(urls, key=lambda item: (-item[1], item[2], len(item[0]), item[0]))
+    return sorted(urls)

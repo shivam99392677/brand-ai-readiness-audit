@@ -33,3 +33,10 @@ scoring_weights:
 thresholds:
   critical_severity_cap: 40
   stale_content_months: 12
+
+browser:
+  enabled: true
+  browser_type: chromium
+  page_timeout_seconds: 15
+  navigation_timeout_seconds: 15
+  max_rendered_pages: 10

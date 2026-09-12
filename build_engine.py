@@ -1,4 +1,7 @@
-"""Core Site Crawler Engine implementing objective URL discovery, bounded crawling, hybrid HTTP + selective Playwright browser rendering, and WebsiteEvidence store."""
+
+from pathlib import Path
+
+engine_code = """\"\"\"Core Site Crawler Engine implementing objective URL discovery, bounded crawling, hybrid HTTP + selective Playwright browser rendering, and WebsiteEvidence store.\"\"\"
 
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
@@ -36,7 +39,7 @@ from src.extraction.structured_data import extract_structured_data
 
 
 class CrawlConfig(BaseModel):
-    """Configuration for site-wide crawling and discovery bounds."""
+    \"\"\"Configuration for site-wide crawling and discovery bounds.\"\"\"
     max_depth: int = Field(default=3, ge=0, description="Maximum crawl depth from starting URL")
     max_pages: int = Field(default=100, ge=1, description="Maximum total pages to crawl")
     same_domain_only: bool = Field(default=True, description="Restrict crawling to starting domain")
@@ -54,11 +57,10 @@ class CrawlConfig(BaseModel):
 
 
 class CrawlManifest(BaseModel):
-    """Backward-compatible wrapper for WebsiteEvidence store."""
+    \"\"\"Backward-compatible wrapper for WebsiteEvidence store.\"\"\"
     start_url: str = Field(..., description="Initial starting URL of the audit")
     pages_discovered: int = Field(..., ge=0, description="Total unique URLs discovered during crawl")
     pages_crawled: int = Field(..., ge=0, description="Total pages successfully or attempt-crawled")
-    pages_rendered: int = Field(default=0, ge=0, description="Total pages rendered by browser")
     max_depth: int = Field(..., ge=0, description="Configured maximum crawl depth")
     truncated: bool = Field(..., description="True if crawl stopped before discovering all inventory URLs")
     truncation_reason: Optional[str] = Field(default=None, description="Reason for crawl truncation")
@@ -71,17 +73,17 @@ class CrawlManifest(BaseModel):
 
 
 class SiteCrawler:
-    """Site-wide Crawler Engine supporting HTTP-first fetching with selective Playwright rendering."""
+    \"\"\"Site-wide Crawler Engine supporting HTTP-first fetching with selective Playwright rendering.\"\"\"
 
     def __init__(self, config: Optional[CrawlConfig] = None):
         self.config = config or CrawlConfig()
         self.robots_checker = RobotsChecker(
             user_agent=self.config.user_agent,
-            timeout=self.config.request_timeout_seconds,
+            timeout_seconds=self.config.request_timeout_seconds,
         )
         self.sitemap_discoverer = SitemapDiscoverer(
             user_agent=self.config.user_agent,
-            timeout=self.config.request_timeout_seconds,
+            timeout_seconds=self.config.request_timeout_seconds,
         )
         self.browser_renderer = BrowserRenderer(
             browser_type=self.config.browser_type,
@@ -94,7 +96,7 @@ class SiteCrawler:
         html_override: Optional[str] = None,
         custom_fetcher: Optional[Callable[[str], tuple]] = None,
     ) -> CrawlManifest:
-        """Executes bounded, priority-driven site crawl with HTTP-first strategy and selective browser rendering."""
+        \"\"\"Executes bounded, priority-driven site crawl with HTTP-first strategy and selective browser rendering.\"\"\"
         start_time = time.time()
         norm_start = normalize_url(start_url)
         if not norm_start:
@@ -222,41 +224,17 @@ class SiteCrawler:
             final_url = curr_url
             fetch_error = None
 
-            is_html_override = False
-            if html_override and (curr_url == norm_start or curr_url == start_url or normalize_url(curr_url) == norm_start):
+            if html_override and curr_url == norm_start:
                 html = html_override
                 status_code = 200
-                is_html_override = True
             elif custom_fetcher:
                 try:
-                    res_tuple = None
-                    try:
-                        res_tuple = custom_fetcher(curr_url)
-                    except Exception:
-                        alt_u = curr_url[:-1] if curr_url.endswith("/") else curr_url + "/"
-                        res_tuple = custom_fetcher(alt_u)
-
-                    if res_tuple is not None:
-                        if len(res_tuple) == 3:
-                            if isinstance(res_tuple[0], int):
-                                status_code, html, headers = res_tuple
-                            elif isinstance(res_tuple[2], int):
-                                html, headers, status_code = res_tuple
-                            else:
-                                status_code = 200
-                                html = str(res_tuple[0])
-                                headers = {}
-                        elif len(res_tuple) == 2:
-                            if isinstance(res_tuple[0], int):
-                                status_code, html = res_tuple
-                                headers = {}
-                            elif isinstance(res_tuple[1], int):
-                                html, status_code = res_tuple
-                                headers = {}
-                            else:
-                                status_code = 200
-                                html = str(res_tuple[0])
-                                headers = {}
+                    res_tuple = custom_fetcher(curr_url)
+                    if len(res_tuple) == 3:
+                        html, headers, status_code = res_tuple
+                    elif len(res_tuple) == 2:
+                        html, status_code = res_tuple
+                        headers = {}
                     final_url = curr_url
                 except Exception as cf_err:
                     fetch_error = str(cf_err)
@@ -370,9 +348,8 @@ class SiteCrawler:
                 self.config.browser_enabled
                 and render_decision.required
                 and pages_rendered_count < self.config.max_rendered_pages
-                and not is_html_override
             ):
-                render_result = self.browser_renderer.render_page(curr_url)
+                render_result = self.browser_renderer.render(curr_url)
                 pages_rendered_count += 1
 
                 if render_result.rendered and render_result.html:
@@ -601,7 +578,6 @@ class SiteCrawler:
             start_url=norm_start,
             pages_discovered=total_discovered,
             pages_crawled=total_crawled,
-            pages_rendered=pages_rendered_count,
             max_depth=self.config.max_depth,
             truncated=truncated,
             truncation_reason=truncation_reason,
@@ -614,3 +590,8 @@ class SiteCrawler:
         )
 
         return manifest
+"""
+
+Path("src/crawler/engine.py").write_text(engine_code, encoding="utf-8")
+print("Successfully wrote src/crawler/engine.py!")
+
