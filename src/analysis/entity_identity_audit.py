@@ -60,6 +60,32 @@ class EntityIdentityAuditor:
                 elif ev.type == EvidenceType.HEADING and ev.data.get("level") == 1:
                     h1s_by_url.setdefault(u, []).append(ev.data.get("text", ""))
 
+            # Also ingest contacts directly from website.pages if available
+            if website and hasattr(website, "pages") and website.pages:
+                for page in website.pages:
+                    p_url = page.url
+                    if page.title:
+                        titles_by_url.setdefault(p_url, page.title)
+                    if hasattr(page, "contacts") and page.contacts:
+                        for ph in page.contacts.phone_numbers:
+                            phones_by_url.setdefault(p_url, []).append(CanonicalEvidence(
+                                id="EV-CONT-PH",
+                                type=EvidenceType.ENTITY_PHONE,
+                                source="page_contacts",
+                                url=p_url,
+                                data={"phone": ph},
+                                provenance={"source": "page.contacts", "source_url": p_url, "location": "DOM Contact Text"},
+                            ))
+                        for ad in page.contacts.addresses:
+                            addresses_by_url.setdefault(p_url, []).append(CanonicalEvidence(
+                                id="EV-CONT-AD",
+                                type=EvidenceType.ENTITY_ADDRESS,
+                                source="page_contacts",
+                                url=p_url,
+                                data={"address": ad},
+                                provenance={"source": "page.contacts", "source_url": p_url, "location": "DOM Address Text"},
+                            ))
+
             # -------------------------------------------------------------
             # EI-01: Organization / Brand Name Discrepancies
             # -------------------------------------------------------------
@@ -126,9 +152,21 @@ class EntityIdentityAuditor:
                         all_same_as.add(sa_url)
 
             invalid_same_as: List[str] = []
+            broken_same_as: List[str] = []
+            checked_sameas = 0
+
+            import requests
             for sa_url in all_same_as:
                 if not (sa_url.startswith("http://") or sa_url.startswith("https://")):
                     invalid_same_as.append(sa_url)
+                elif checked_sameas < 2:
+                    checked_sameas += 1
+                    try:
+                        resp = requests.get(sa_url, timeout=8.0, headers={"User-Agent": "Mozilla/5.0 (compatible; BrandAIReadinessAudit/1.0)"})
+                        if resp.status_code == 404:
+                            broken_same_as.append(sa_url)
+                    except Exception:
+                        pass  # Skip unreachable gracefully
 
             if invalid_same_as:
                 findings.append(Finding(
@@ -145,6 +183,22 @@ class EntityIdentityAuditor:
                         location="Schema.org sameAs",
                     )],
                     recommendation="Ensure all sameAs entries are valid absolute HTTPS URLs.",
+                ))
+            elif broken_same_as:
+                findings.append(Finding(
+                    skill="entity-identity-audit",
+                    check_id="EI-02",
+                    title="Broken sameAs Entity Profile (404 Not Found)",
+                    status=FindingStatus.FAIL,
+                    severity=FindingSeverity.HIGH,
+                    description=f"One or more declared sameAs entity URLs returned HTTP 404 Not Found: {', '.join(broken_same_as)}.",
+                    evidence=[Evidence(
+                        source_url=website.start_url if website else "https://example.com",
+                        evidence_type="broken_sameas_url",
+                        observed={"broken_urls": broken_same_as},
+                        location="Schema.org sameAs",
+                    )],
+                    recommendation="Repair or remove broken sameAs profile URLs.",
                 ))
             elif not all_same_as:
                 findings.append(Finding(

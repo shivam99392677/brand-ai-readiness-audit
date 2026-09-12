@@ -197,9 +197,9 @@ class StructuredDataAuditor:
                 skill="structured-data-audit",
                 check_id="SD-001",
                 title="JSON-LD Script Block Detection",
-                status=FindingStatus.WARNING,
-                severity=FindingSeverity.LOW,
-                description="No JSON-LD script blocks were detected in the HTML document.",
+                status=FindingStatus.NOT_APPLICABLE,
+                severity=FindingSeverity.INFO,
+                description="No JSON-LD script blocks were detected in the HTML document (optional for general/blog pages).",
                 evidence=[ev],
                 recommendation="Consider adding JSON-LD structured data script blocks for primary entities.",
             )
@@ -313,11 +313,11 @@ class StructuredDataAuditor:
                 skill="structured-data-audit",
                 check_id="SD-003",
                 title="Schema Type Detection",
-                status=FindingStatus.WARNING,
-                severity=FindingSeverity.LOW,
-                description="No explicit @type or microdata itemtype declarations were detected.",
+                status=FindingStatus.NOT_APPLICABLE,
+                severity=FindingSeverity.INFO,
+                description="No explicit @type or microdata itemtype declarations were detected on this page (optional for non-product/general pages).",
                 evidence=[ev],
-                recommendation="Add explicit @type properties to JSON-LD objects.",
+                recommendation="Add explicit @type properties to JSON-LD objects where applicable.",
             )
 
     def check_sd_004_entity_information(self) -> Finding:

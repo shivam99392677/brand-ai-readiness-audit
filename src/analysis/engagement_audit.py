@@ -55,57 +55,78 @@ class EngagementAuditor:
                 elif ev.type == EvidenceType.CRAWL_COVERAGE:
                     coverage_ev = ev
 
-            # Identify Homepage
-            home_u = next((u for u in headings_by_url.keys() if u == start_u or urlparse(u).path in ("", "/")), start_u)
-            home_headings = headings_by_url.get(home_u, [])
-            home_paragraphs = paragraphs_by_url.get(home_u, [])
-            home_links = links_by_url.get(home_u, [])
-            home_forms = forms_by_url.get(home_u, [])
+            # Identify Homepage items using normalized URL matching
+            start_norm = start_u.rstrip("/")
+            home_u = start_u
+
+            home_headings = [h for u, hs in headings_by_url.items() if u.rstrip("/") == start_norm or urlparse(u).path.strip("/") == "" for h in hs]
+            home_paragraphs = [p for u, ps in paragraphs_by_url.items() if u.rstrip("/") == start_norm or urlparse(u).path.strip("/") == "" for p in ps]
+            home_links = [l for u, ls in links_by_url.items() if u.rstrip("/") == start_norm or urlparse(u).path.strip("/") == "" for l in ls]
+            home_forms = [f for u, fs in forms_by_url.items() if u.rstrip("/") == start_norm or urlparse(u).path.strip("/") == "" for f in fs]
+
+            # Check homepage word count to avoid double-counting JS-heavy shells (<80 words)
+            home_word_count = 0
+            for ev in evidence.evidence:
+                ev_u_norm = (ev.url or "").rstrip("/")
+                if (ev_u_norm == start_norm or urlparse(ev.url or "").path.strip("/") == "") and ev.type in (EvidenceType.VISIBLE_TEXT_SUMMARY, EvidenceType.TEXT_EXTRACTABILITY_SIGNAL):
+                    home_word_count = ev.data.get("word_count", 0)
+                    if home_word_count:
+                        break
+            if not home_word_count and website and hasattr(website, "pages") and website.pages:
+                hp = next((p for p in website.pages if getattr(p, "url", "").rstrip("/") == start_norm or getattr(p, "depth", 1) == 0), None)
+                if hp:
+                    home_word_count = getattr(hp, "word_count", 0)
+            if not home_word_count:
+                all_home_text = " ".join([h.data.get("text", "") for h in home_headings] + [p.data.get("text", "") for p in home_paragraphs])
+                home_word_count = len(all_home_text.split())
 
             # -------------------------------------------------------------
             # EG-01: First Screenful Missing Who / What / Next
             # -------------------------------------------------------------
-            has_h1 = any(h.data.get("level") == 1 and bool(h.data.get("text", "").strip()) for h in home_headings)
-            has_subhead_or_desc = bool(home_paragraphs) or any(h.data.get("level") in (2, 3) for h in home_headings)
+            # Only fires when there is enough visible text (>=80 words) to judge orientation
+            if home_word_count >= 80:
+                has_h1 = any(h.data.get("level") == 1 and bool(h.data.get("text", "").strip()) for h in home_headings)
+                has_subhead_or_desc = bool(home_paragraphs) or any(h.data.get("level") in (2, 3) for h in home_headings)
 
-            # Check for primary CTA
-            has_form_cta = bool(home_forms)
-            has_button_cta = False
-            for l_ev in home_links:
-                anchor = l_ev.data.get("anchor_text", "").strip().lower()
-                if any(k in anchor for k in ACTION_CTA_KEYWORDS):
-                    has_button_cta = True
-                    break
+                # Check for primary CTA
+                has_form_cta = bool(home_forms)
+                has_button_cta = False
+                for l_ev in home_links:
+                    anchor = l_ev.data.get("anchor_text", "").strip().lower()
+                    if any(k in anchor for k in ACTION_CTA_KEYWORDS):
+                        has_button_cta = True
+                        break
 
-            missing_elements: List[str] = []
-            if not has_h1:
-                missing_elements.append("Primary H1 (Who / What)")
-            if not has_subhead_or_desc:
-                missing_elements.append("Descriptive Subhead / Value Proposition")
-            if not has_form_cta and not has_button_cta:
-                missing_elements.append("Primary Actionable Call-to-Action (CTA)")
+                missing_elements: List[str] = []
+                if not has_h1:
+                    missing_elements.append("Primary H1 (Who / What)")
+                if not has_subhead_or_desc:
+                    missing_elements.append("Descriptive Subhead / Value Proposition")
+                if not has_form_cta and not has_button_cta:
+                    missing_elements.append("Primary Actionable Call-to-Action (CTA)")
 
-            if missing_elements:
-                findings.append(Finding(
-                    skill="engagement-audit",
-                    check_id="EG-01",
-                    title="Landing Screen Missing Core Orientation Elements (Who/What/Next)",
-                    status=FindingStatus.WARNING if len(missing_elements) == 1 else FindingStatus.FAIL,
-                    severity=FindingSeverity.HIGH,
-                    description=f"Homepage landing area is missing essential visitor orientation elements: {', '.join(missing_elements)}.",
-                    evidence=[Evidence(
-                        source_url=home_u,
-                        evidence_type="landing_orientation",
-                        observed={
-                            "has_h1": has_h1,
-                            "has_subhead": has_subhead_or_desc,
-                            "has_action_cta": has_form_cta or has_button_cta,
-                            "missing": missing_elements,
-                        },
-                        location="Homepage Above-The-Fold",
-                    )],
-                    recommendation="Ensure the primary screenful immediately states who the brand is (H1), what it provides (subheading), and what the visitor should do next (actionable CTA).",
-                ))
+                if missing_elements:
+                    findings.append(Finding(
+                        skill="engagement-audit",
+                        check_id="EG-01",
+                        title="Landing Screen Missing Core Orientation Elements (Who/What/Next)",
+                        status=FindingStatus.WARNING if len(missing_elements) == 1 else FindingStatus.FAIL,
+                        severity=FindingSeverity.HIGH,
+                        description=f"Homepage landing area is missing essential visitor orientation elements: {', '.join(missing_elements)}.",
+                        evidence=[Evidence(
+                            source_url=home_u,
+                            evidence_type="landing_orientation",
+                            observed={
+                                "has_h1": has_h1,
+                                "has_subhead": has_subhead_or_desc,
+                                "has_action_cta": has_form_cta or has_button_cta,
+                                "missing": missing_elements,
+                                "word_count": home_word_count,
+                            },
+                            location="Homepage Above-The-Fold",
+                        )],
+                        recommendation="Ensure the primary screenful immediately states who the brand is (H1), what it provides (subheading), and what the visitor should do next (actionable CTA).",
+                    ))
 
             # -------------------------------------------------------------
             # EG-02: Navigation Labels Do Not Cover Core Offerings

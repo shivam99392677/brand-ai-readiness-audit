@@ -152,19 +152,27 @@ class FreshnessCorroborationAuditor:
             # FC-02: Stale Content Older Than 12 Months
             # -------------------------------------------------------------
             stale_pages_ev: List[Evidence] = []
-            for u_url, date_items in dates_by_url.items():
-                years: List[int] = []
-                for d_ev in date_items:
-                    k = d_ev.data.get("kind", "")
-                    # Ignore footer copyright dates (explicit anti-false-positive rule)
-                    if "copyright" in k.lower():
-                        continue
-                    y = parse_date_to_year(d_ev.data.get("normalized_value") or d_ev.data.get("raw_value"))
-                    if y:
-                        years.append(y)
+            EXPLICIT_UPDATE_KINDS = {
+                "datemodified", "schema_date_modified", "meta_moddate",
+                "datepublished", "schema_date_published", "meta_pubdate",
+                "last_modified_header", "time_tag_datetime", "time_datetime", "sitemap_lastmod"
+            }
 
-                if years:
-                    newest_year = max(years)
+            for u_url, date_items in dates_by_url.items():
+                explicit_years: List[int] = []
+                for d_ev in date_items:
+                    k = str(d_ev.data.get("kind", "")).lower()
+                    # Strictly ignore footer copyright dates and ungrounded body text numbers
+                    if "copyright" in k or k == "visible_date":
+                        continue
+                    if any(uk in k for uk in EXPLICIT_UPDATE_KINDS):
+                        y = parse_date_to_year(d_ev.data.get("normalized_value") or d_ev.data.get("raw_value"))
+                        if y:
+                            explicit_years.append(y)
+
+                # Only evaluate staleness if explicit machine-readable/time date signals exist
+                if explicit_years:
+                    newest_year = max(explicit_years)
                     if newest_year <= (CURRENT_YEAR - 2):  # e.g. 2024 or older when current is 2026
                         stale_pages_ev.append(Evidence(
                             source_url=u_url,
@@ -174,7 +182,7 @@ class FreshnessCorroborationAuditor:
                                 "current_audit_year": CURRENT_YEAR,
                                 "staleness_gap_years": CURRENT_YEAR - newest_year,
                             },
-                            location="Page Date Signals",
+                            location="Explicit Timestamp Metadata",
                         ))
 
             if stale_pages_ev:
@@ -190,35 +198,51 @@ class FreshnessCorroborationAuditor:
                 ))
 
             # -------------------------------------------------------------
-            # FC-03: Corroboration Against Public Sources (Wikidata / sameAs)
+            # FC-03: Corroboration Against Public Sources (Wikidata / Wikipedia / sameAs)
             # -------------------------------------------------------------
             corroboration_evs: List[Evidence] = []
             checked_count = 0
 
-            # 3a. Check Wikidata links
+            # 3a. Check Wikidata & Wikipedia & sameAs links (up to 3 public GET requests)
+            targets_to_probe: List[Tuple[str, str, str]] = []  # (url, source_name, page_url)
             for w_ev in wikidata_evs:
-                wiki_url = w_ev.data.get("wikidata_url")
-                wiki_id = w_ev.data.get("wikidata_id")
-                if wiki_url and checked_count < 2:
-                    checked_count += 1
-                    try:
-                        resp = requests.get(wiki_url, timeout=self.request_timeout, headers={"User-Agent": "AIReadinessAudit/0.1.0"})
-                        if resp.status_code == 200:
-                            corroboration_evs.append(Evidence(
-                                source_url=w_ev.url or "https://example.com",
-                                evidence_type="external_corroboration",
-                                observed={"public_source": "Wikidata", "url": wiki_url, "wikidata_id": wiki_id, "status": 200, "verified": True},
-                                location="Wikidata Entity Link",
-                            ))
-                        elif resp.status_code == 404:
-                            corroboration_evs.append(Evidence(
-                                source_url=w_ev.url or "https://example.com",
-                                evidence_type="broken_corroboration_link",
-                                observed={"public_source": "Wikidata", "url": wiki_url, "status": 404, "verified": False},
-                                location="Wikidata Entity Link",
-                            ))
-                    except Exception:
-                        pass  # Skip unreachable source gracefully
+                w_url = w_ev.data.get("wikidata_url")
+                if w_url and w_url.startswith("http"):
+                    targets_to_probe.append((w_url, "Wikidata", w_ev.url or "https://example.com"))
+
+            for sa_ev in same_as_links:
+                sa_url = sa_ev.data.get("same_as_url", "")
+                if sa_url and sa_url.startswith("http"):
+                    s_name = "Wikipedia" if "wikipedia.org" in sa_url.lower() else "sameAs Profile"
+                    targets_to_probe.append((sa_url, s_name, sa_ev.url or "https://example.com"))
+
+            for probe_url, probe_name, p_origin in targets_to_probe:
+                if checked_count >= 3:
+                    break
+                checked_count += 1
+                try:
+                    resp = requests.get(
+                        probe_url,
+                        timeout=self.request_timeout,
+                        headers={"User-Agent": "Mozilla/5.0 (compatible; BrandAIReadinessAudit/1.0)"}
+                    )
+                    if resp.status_code == 200:
+                        corroboration_evs.append(Evidence(
+                            source_url=p_origin,
+                            evidence_type="external_corroboration",
+                            observed={"public_source": probe_name, "url": probe_url, "status": 200, "verified": True},
+                            location=f"Schema.org sameAs ({probe_name})",
+                        ))
+                    elif resp.status_code == 404:
+                        corroboration_evs.append(Evidence(
+                            source_url=p_origin,
+                            evidence_type="broken_corroboration_link",
+                            observed={"public_source": probe_name, "url": probe_url, "status": 404, "verified": False},
+                            location=f"Schema.org sameAs ({probe_name})",
+                        ))
+                except Exception:
+                    # Skip unreachable sources gracefully without crashing
+                    pass
 
             # 3b. If no sameAs or Wikidata found on primary site
             if not same_as_links and not wikidata_evs:

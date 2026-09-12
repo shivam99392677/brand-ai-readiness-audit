@@ -21,17 +21,17 @@ SEVERITY_ORDER = {
 }
 
 PRIORITY_MAP = {
-    "critical": "P1",
-    "high": "P2",
-    "medium": "P3",
-    "low": "P4",
+    "critical": "high",
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
 }
 
 
 class SuggestedAction(BaseModel):
     """Structured remediation action object required by Adobe schema."""
     summary: str = Field(..., description="Actionable remediation guidance")
-    priority: str = Field(..., description="Action priority (P1, P2, P3, P4)")
+    priority: str = Field(..., description="Action priority (critical, high, medium, low)")
 
 
 class AdobeFinding(BaseModel):

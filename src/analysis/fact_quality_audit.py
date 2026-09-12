@@ -57,13 +57,14 @@ def run_fact_quality_audit(
     try:
         # Index evidence by URL and type
         text_by_url: Dict[str, List[Tuple[str, str, Optional[str]]]] = {}  # url -> [(text, ev_id, location)]
-        price_claims: Dict[str, Set[str]] = {}  # url -> set of raw prices
-        refund_claims: Dict[str, Set[int]] = {}  # url -> set of refund days
-        founded_claims: Dict[str, Set[int]] = {}  # url -> set of founded years
+        price_claims: Dict[str, Set[Tuple[str, str]]] = {}  # url -> set of (raw_price, ev_id)
+        refund_claims: Dict[str, Set[Tuple[int, str]]] = {}  # url -> set of (refund_days, ev_id)
+        founded_claims: Dict[str, Set[Tuple[int, str]]] = {}  # url -> set of (founded_year, ev_id)
+        hours_claims: Dict[str, Set[Tuple[str, str]]] = {}  # url -> set of (hours_str, ev_id)
 
         for ev in evidence.evidence:
             ev_url = ev.url or (website.start_url if website else "https://example.com")
-            ev_id = ev.id
+            ev_id = ev.id or "EV-00000"
             loc = ev.provenance.location or ev.source
 
             # Collect text chunks from paragraphs, headings, blockquotes
@@ -74,14 +75,14 @@ def run_fact_quality_audit(
 
                     # Extract price mentions
                     prices = re.findall(PRICE_REGEX, text, re.IGNORECASE)
-                    if prices:
-                        price_claims.setdefault(ev_url, set()).update(prices)
+                    for pr in prices:
+                        price_claims.setdefault(ev_url, set()).add((pr.strip(), ev_id))
 
                     # Extract refund days
                     refunds = re.findall(REFUND_REGEX, text, re.IGNORECASE)
                     for r in refunds:
                         try:
-                            refund_claims.setdefault(ev_url, set()).add(int(r))
+                            refund_claims.setdefault(ev_url, set()).add((int(r), ev_id))
                         except ValueError:
                             pass
 
@@ -89,9 +90,15 @@ def run_fact_quality_audit(
                     founded = re.findall(FOUNDED_REGEX, text, re.IGNORECASE)
                     for f in founded:
                         try:
-                            founded_claims.setdefault(ev_url, set()).add(int(f))
+                            founded_claims.setdefault(ev_url, set()).add((int(f), ev_id))
                         except ValueError:
                             pass
+
+                    # Extract hours mentions
+                    hours_matches = re.findall(HOURS_REGEX, text, re.IGNORECASE)
+                    for hm in hours_matches:
+                        clean_hm = " ".join(hm.strip().split())
+                        hours_claims.setdefault(ev_url, set()).add((clean_hm, ev_id))
 
         # -------------------------------------------------------------
         # FQ-02: Cross-Page Contradictions
@@ -100,85 +107,111 @@ def run_fact_quality_audit(
         contradiction_details: List[str] = []
 
         # 1. Price Contradictions
-        all_unique_prices = set()
-        for u_prices in price_claims.values():
-            all_unique_prices.update(u_prices)
-        if len(price_claims) > 1 and len(all_unique_prices) > 1:
-            # Check if prices differ across different pages
+        if len(price_claims) > 1:
             urls_with_prices = list(price_claims.keys())
             for i in range(len(urls_with_prices)):
                 for j in range(i + 1, len(urls_with_prices)):
                     u1, u2 = urls_with_prices[i], urls_with_prices[j]
-                    p1, p2 = price_claims[u1], price_claims[u2]
-                    if p1 != p2 and not p1.issubset(p2) and not p2.issubset(p1):
+                    p1_set = {p[0] for p in price_claims[u1]}
+                    p2_set = {p[0] for p in price_claims[u2]}
+                    if p1_set != p2_set and not p1_set.issubset(p2_set) and not p2_set.issubset(p1_set):
+                        ev_ids1 = [p[1] for p in price_claims[u1]]
+                        ev_ids2 = [p[1] for p in price_claims[u2]]
                         contradiction_details.append(
-                            f"Pricing differs between {u1} ({', '.join(sorted(p1))}) and {u2} ({', '.join(sorted(p2))})."
+                            f"Pricing differs between {u1} ({', '.join(sorted(p1_set))}, [{', '.join(ev_ids1)}]) and {u2} ({', '.join(sorted(p2_set))}, [{', '.join(ev_ids2)}])."
                         )
                         contradiction_evs.append(Evidence(
                             source_url=u1,
                             evidence_type="price_claim",
-                            observed={"url": u1, "prices": sorted(list(p1)), "conflicting_url": u2, "conflicting_prices": sorted(list(p2))},
+                            observed={"url": u1, "prices": sorted(list(p1_set)), "evidence_ids": ev_ids1, "conflicting_url": u2, "conflicting_prices": sorted(list(p2_set))},
                             location="Page Text / Pricing",
                         ))
                         contradiction_evs.append(Evidence(
                             source_url=u2,
                             evidence_type="price_claim",
-                            observed={"url": u2, "prices": sorted(list(p2)), "conflicting_url": u1, "conflicting_prices": sorted(list(p1))},
+                            observed={"url": u2, "prices": sorted(list(p2_set)), "evidence_ids": ev_ids2, "conflicting_url": u1, "conflicting_prices": sorted(list(p1_set))},
                             location="Page Text / Pricing",
                         ))
 
         # 2. Refund Window Contradictions
-        all_refund_days = set()
-        for r_set in refund_claims.values():
-            all_refund_days.update(r_set)
-        if len(all_refund_days) > 1:
+        if len(refund_claims) > 1:
             refund_urls = list(refund_claims.keys())
             for i in range(len(refund_urls)):
                 for j in range(i + 1, len(refund_urls)):
                     u1, u2 = refund_urls[i], refund_urls[j]
-                    r1, r2 = refund_claims[u1], refund_claims[u2]
-                    if r1 != r2:
+                    r1_set = {r[0] for r in refund_claims[u1]}
+                    r2_set = {r[0] for r in refund_claims[u2]}
+                    if r1_set != r2_set:
+                        ev_ids1 = [r[1] for r in refund_claims[u1]]
+                        ev_ids2 = [r[1] for r in refund_claims[u2]]
                         contradiction_details.append(
-                            f"Refund policy window differs between {u1} ({r1} days) and {u2} ({r2} days)."
+                            f"Refund policy window differs between {u1} ({r1_set} days, [{', '.join(ev_ids1)}]) and {u2} ({r2_set} days, [{', '.join(ev_ids2)}])."
                         )
                         contradiction_evs.append(Evidence(
                             source_url=u1,
                             evidence_type="refund_policy_claim",
-                            observed={"url": u1, "refund_days": sorted(list(r1)), "conflicting_url": u2, "conflicting_days": sorted(list(r2))},
+                            observed={"url": u1, "refund_days": sorted(list(r1_set)), "evidence_ids": ev_ids1, "conflicting_url": u2, "conflicting_days": sorted(list(r2_set))},
                             location="Page Text / Policy",
                         ))
                         contradiction_evs.append(Evidence(
                             source_url=u2,
                             evidence_type="refund_policy_claim",
-                            observed={"url": u2, "refund_days": sorted(list(r2)), "conflicting_url": u1, "conflicting_days": sorted(list(r1))},
+                            observed={"url": u2, "refund_days": sorted(list(r2_set)), "evidence_ids": ev_ids2, "conflicting_url": u1, "conflicting_days": sorted(list(r1_set))},
                             location="Page Text / Policy",
                         ))
 
         # 3. Founding Year Contradictions
-        all_founded = set()
-        for f_set in founded_claims.values():
-            all_founded.update(f_set)
-        if len(all_founded) > 1:
+        if len(founded_claims) > 1:
             f_urls = list(founded_claims.keys())
             for i in range(len(f_urls)):
                 for j in range(i + 1, len(f_urls)):
                     u1, u2 = f_urls[i], f_urls[j]
-                    f1, f2 = founded_claims[u1], founded_claims[u2]
-                    if f1 != f2:
+                    f1_set = {f[0] for f in founded_claims[u1]}
+                    f2_set = {f[0] for f in founded_claims[u2]}
+                    if f1_set != f2_set:
+                        ev_ids1 = [f[1] for f in founded_claims[u1]]
+                        ev_ids2 = [f[1] for f in founded_claims[u2]]
                         contradiction_details.append(
-                            f"Company founding year differs between {u1} ({f1}) and {u2} ({f2})."
+                            f"Company founding year differs between {u1} ({f1_set}, [{', '.join(ev_ids1)}]) and {u2} ({f2_set}, [{', '.join(ev_ids2)}])."
                         )
                         contradiction_evs.append(Evidence(
                             source_url=u1,
                             evidence_type="founding_year_claim",
-                            observed={"url": u1, "founded": sorted(list(f1)), "conflicting_url": u2, "conflicting_founded": sorted(list(f2))},
+                            observed={"url": u1, "founded": sorted(list(f1_set)), "evidence_ids": ev_ids1, "conflicting_url": u2, "conflicting_founded": sorted(list(f2_set))},
                             location="Page Text / About",
                         ))
                         contradiction_evs.append(Evidence(
                             source_url=u2,
                             evidence_type="founding_year_claim",
-                            observed={"url": u2, "founded": sorted(list(f2)), "conflicting_url": u1, "conflicting_founded": sorted(list(f1))},
+                            observed={"url": u2, "founded": sorted(list(f2_set)), "evidence_ids": ev_ids2, "conflicting_url": u1, "conflicting_founded": sorted(list(f1_set))},
                             location="Page Text / About",
+                        ))
+
+        # 4. Operating Hours Contradictions
+        if len(hours_claims) > 1:
+            h_urls = list(hours_claims.keys())
+            for i in range(len(h_urls)):
+                for j in range(i + 1, len(h_urls)):
+                    u1, u2 = h_urls[i], h_urls[j]
+                    h1_set = {h[0] for h in hours_claims[u1]}
+                    h2_set = {h[0] for h in hours_claims[u2]}
+                    if h1_set != h2_set and not h1_set.issubset(h2_set) and not h2_set.issubset(h1_set):
+                        ev_ids1 = [h[1] for h in hours_claims[u1]]
+                        ev_ids2 = [h[1] for h in hours_claims[u2]]
+                        contradiction_details.append(
+                            f"Operating hours differ between {u1} ({h1_set}, [{', '.join(ev_ids1)}]) and {u2} ({h2_set}, [{', '.join(ev_ids2)}])."
+                        )
+                        contradiction_evs.append(Evidence(
+                            source_url=u1,
+                            evidence_type="hours_claim",
+                            observed={"url": u1, "hours": sorted(list(h1_set)), "evidence_ids": ev_ids1, "conflicting_url": u2, "conflicting_hours": sorted(list(h2_set))},
+                            location="Page Text / Contact & Hours",
+                        ))
+                        contradiction_evs.append(Evidence(
+                            source_url=u2,
+                            evidence_type="hours_claim",
+                            observed={"url": u2, "hours": sorted(list(h2_set)), "evidence_ids": ev_ids2, "conflicting_url": u1, "conflicting_hours": sorted(list(h1_set))},
+                            location="Page Text / Contact & Hours",
                         ))
 
         if contradiction_evs:
@@ -190,7 +223,7 @@ def run_fact_quality_audit(
                 severity=FindingSeverity.HIGH,
                 description="Found conflicting factual claims across different pages of the website: " + " ".join(contradiction_details),
                 evidence=contradiction_evs,
-                recommendation="Synchronize pricing, refund policies, and organizational statistics across all site pages to prevent AI search models from citing contradictory information.",
+                recommendation="Synchronize pricing, refund policies, operating hours, and organizational statistics across all site pages to prevent AI search models from citing contradictory information.",
             ))
 
         # -------------------------------------------------------------
