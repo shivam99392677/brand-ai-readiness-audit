@@ -17,6 +17,8 @@ BLOCK_TAGS = {
     "article", "header", "footer", "nav", "main", "li", "tr", "td", "th", "br", "blockquote"
 }
 
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+
 SKIP_TAGS = {"script", "style", "noscript", "svg", "template"}
 
 FRAMEWORK_PAYLOAD_PATTERNS = [
@@ -75,7 +77,8 @@ class GeneralPageHTMLParser(HTMLParser):
 
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]):
         tag_lower = tag.lower()
-        self._tag_stack.append(tag_lower)
+        if tag_lower not in VOID_TAGS:
+            self._tag_stack.append(tag_lower)
 
         if tag_lower in ("main", "article", "nav", "header", "footer", "section"):
             self.sections_found.add(tag_lower)

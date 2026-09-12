@@ -108,9 +108,11 @@ class SitemapEntry(BaseModel):
 class SitemapEvidence(BaseModel):
     """Structured observable evidence gathered from sitemap XML/indices."""
     url: str = Field(..., description="Sitemap XML URL")
+    available: bool = Field(default=False, description="Availability flag")
     status_code: int = Field(default=0, description="HTTP status code")
     type: str = Field(default="urlset", description="Sitemap type ('urlset' or 'sitemapindex')")
     entries: List[SitemapEntry] = Field(default_factory=list, description="Target page URL entries")
+    urls_discovered: List[str] = Field(default_factory=list, description="Discovered target page URLs")
     sitemap_indices: List[str] = Field(default_factory=list, description="Child sitemap URLs if sitemapindex")
     parse_errors: List[str] = Field(default_factory=list, description="Sitemap XML parsing errors")
 
@@ -141,7 +143,9 @@ class DiscoveredURLEvidence(BaseModel):
     url: str = Field(..., description="Discovered target URL")
     discovered_from: Optional[str] = Field(default=None, description="Source page URL where link was found")
     anchor_text: Optional[str] = Field(default=None, description="Anchor text if discovered via HTML link")
-    discovery_method: str = Field(default="html_link", description="Discovery method ('html_link', 'sitemap', 'robots_sitemap', 'start_url')")
+    discovery_method: str = Field(default="html_link", description="Discovery method ('html_link', 'sitemap', 'robots_sitemap', 'start_url', 'browser_rendered_link')")
+    depth: int = Field(default=0, ge=0, description="Discovered depth level")
+    priority: float = Field(default=0.5, description="URL priority score")
     provenance: Optional[Provenance] = Field(default=None, description="Source location pointer")
 
 
@@ -177,6 +181,7 @@ class ImageEvidence(BaseModel):
     linked_href: Optional[str] = Field(default=None, description="Destination URL if image is wrapped in <a href>")
     is_tracking_or_icon: bool = Field(default=False, description="True if image matches tracking pixel or icon heuristic")
     filter_reason: Optional[str] = Field(default=None, description="Reason if filtered as tracking or icon")
+    source_types: List[str] = Field(default_factory=lambda: ["http"], description="Discovery sources ('http', 'browser')")
     provenance: Optional[Provenance] = Field(default=None, description="Traceable source provenance")
     visual_analysis: Optional[Dict[str, Any]] = Field(default=None, description="Placeholder for future vision analysis")
 
@@ -212,6 +217,7 @@ class LinkEvidence(BaseModel):
     href: str = Field(..., description="Target URL")
     source_page: str = Field(..., description="Page URL containing the link")
     anchor_text: str = Field(default="", description="Visible text inside the link tag")
+    source_types: List[str] = Field(default_factory=lambda: ["http"], description="Discovery sources")
     is_internal: bool = Field(default=True, description="True if link stays within base domain")
     rel: Optional[str] = Field(default=None, description="rel attribute string")
     target: Optional[str] = Field(default=None, description="target attribute string")
@@ -231,6 +237,7 @@ class FormEvidence(BaseModel):
     """Observable evidence for an interactive HTML form."""
     source_page: str = Field(..., description="Page URL containing the form")
     action: Optional[str] = Field(default=None, description="Form action target URL")
+    source_types: List[str] = Field(default_factory=lambda: ["http"], description="Discovery sources")
     method: str = Field(default="get", description="HTTP method (get, post)")
     inputs: List[FormInputField] = Field(default_factory=list, description="Form input fields")
     buttons: List[str] = Field(default_factory=list, description="Form submit/action button texts")
@@ -244,6 +251,7 @@ class DocumentEvidence(BaseModel):
     filename: str = Field(..., description="Base filename")
     file_type: str = Field(..., description="File extension / document type")
     anchor_text: Optional[str] = Field(default=None, description="Link text pointing to document")
+    source_types: List[str] = Field(default_factory=lambda: ["http"], description="Discovery sources ('http', 'browser')")
     provenance: Optional[Provenance] = Field(default=None, description="Source location pointer")
 
 
@@ -267,6 +275,7 @@ class DateCandidate(BaseModel):
     """Single date candidate (visible or machine-readable) extracted from DOM."""
     value: str = Field(..., description="Extracted raw date string")
     candidate_type: str = Field(..., description="Candidate type ('visible_date', 'machine_date')")
+    source_types: List[str] = Field(default_factory=lambda: ["http"], description="Discovery sources")
     provenance: Optional[Provenance] = Field(default=None, description="Source pointer")
 
 
@@ -281,6 +290,18 @@ class PageRoleSignals(BaseModel):
     """Observable signals supporting page role classification."""
     classified_role: str = Field(default="unknown", description="Primary candidate page role (defaults to 'unknown')")
     signals: List[str] = Field(default_factory=list, description="Matched URL, heading, meta, and path signals")
+
+
+class RenderMetadata(BaseModel):
+    """Metadata tracking Playwright browser rendering attempt and outcome."""
+    attempted: bool = Field(default=False)
+    rendered: bool = Field(default=False)
+    render_time_ms: float = Field(default=0.0)
+    final_url: Optional[str] = Field(default=None)
+    error: Optional[str] = Field(default=None)
+    reasons: List[str] = Field(default_factory=list)
+    browser_name: str = Field(default="chromium")
+    timeout: Optional[float] = Field(default=None)
 
 
 class PageEvidence(BaseModel):
@@ -334,6 +355,11 @@ class PageEvidence(BaseModel):
     # Text extractability metrics
     text_extractability: Dict[str, Any] = Field(default_factory=dict, description="Word boundary collapse & text metrics")
     error: Optional[str] = Field(default=None, description="Error string if page fetch failed")
+    # Coexisting Browser Rendering Evidence
+    http_evidence: Optional[Dict[str, Any]] = Field(default=None, description="Pre-rendered HTTP evidence snapshot")
+    rendered_evidence: Optional[Dict[str, Any]] = Field(default=None, description="Post-rendered browser evidence snapshot")
+    render_metadata: Optional[RenderMetadata] = Field(default=None, description="Browser rendering metadata")
+
 
     # Excluded internal raw payloads
     html_content: Optional[str] = Field(default=None, exclude=True, description="Internal raw HTML payload")
@@ -359,6 +385,7 @@ class WebsiteEvidence(BaseModel):
     # Overview counts
     pages_discovered: int = Field(default=0, ge=0, description="Total unique URLs discovered")
     pages_crawled: int = Field(default=0, ge=0, description="Total pages crawled")
+    pages_rendered: int = Field(default=0, ge=0, description="Total pages rendered by browser")
     max_depth: int = Field(default=3, ge=0, description="Configured max depth")
     truncated: bool = Field(default=False, description="True if crawl stopped before completing queue")
     truncation_reason: Optional[str] = Field(default=None, description="Reason for crawl truncation")

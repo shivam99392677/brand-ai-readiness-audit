@@ -52,6 +52,11 @@ class SitemapDiscoverer:
 
         return evidence, sorted(list(discovered_urls))
 
+    def fetch_and_parse(self, sitemap_url: str, base_domain: Optional[str] = None) -> SitemapEvidence:
+        """Fetches a sitemap URL and returns a SitemapEvidence object."""
+        sm_ev, _ = self._fetch_and_parse_sitemap(sitemap_url, base_domain=base_domain)
+        return sm_ev
+
     def _fetch_and_parse_sitemap(
         self,
         sitemap_url: str,

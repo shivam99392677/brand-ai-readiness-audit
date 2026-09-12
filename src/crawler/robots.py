@@ -15,6 +15,19 @@ class RobotsChecker:
         self.user_agent = user_agent
         self.timeout = timeout
 
+    def fetch_and_parse(self, target_url: str) -> RobotsEvidence:
+        """Fetches robots.txt and returns structured RobotsEvidence."""
+        res = self.check_robots(target_url)
+        return res["evidence"]
+
+    def is_allowed(self, url: str, robots_evidence: Optional[RobotsEvidence] = None) -> bool:
+        """Checks if a URL is allowed by robots.txt rules."""
+        if robots_evidence and hasattr(robots_evidence, "available"):
+            if not robots_evidence.available:
+                return True
+        res = self.check_robots(url)
+        return res.get("allowed", True)
+
     def check_robots(self, target_url: str) -> Dict[str, Any]:
         """Fetches robots.txt for target domain and returns structured robots check dictionary and RobotsEvidence."""
         parsed = urlparse(target_url)
