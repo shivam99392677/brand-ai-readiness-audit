@@ -12,6 +12,7 @@ It contains NO audit findings, NO scores, NO recommendations, and NO LLM calls.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import json
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 if TYPE_CHECKING:
@@ -234,6 +235,20 @@ class ExtractionManager:
             except Exception as t_err:
                 errors.append(ExtractionError(extractor="text-extractor", source=page_url, error=str(t_err)))
 
+            # Parse JSON-LD blocks for schema, freshness, and entity extractors
+            parsed_jsonld_blocks: List[Dict[str, Any]] = []
+            if page.jsonld_raw_blocks:
+                for blk in page.jsonld_raw_blocks:
+                    try:
+                        if isinstance(blk, str):
+                            parsed_jsonld_blocks.append(json.loads(blk))
+                        elif isinstance(blk, dict):
+                            parsed_jsonld_blocks.append(blk)
+                    except Exception:
+                        pass
+            elif page.structured_data and "parsed_blocks" in page.structured_data:
+                parsed_jsonld_blocks = page.structured_data["parsed_blocks"]
+
             # 2e. Schema.org & Semantic Markup Extractor
             try:
                 schema_evs = self.schema_extractor.extract_schema_evidence(
@@ -251,8 +266,11 @@ class ExtractionManager:
                 fresh_evs = self.freshness_extractor.extract_freshness_evidence(
                     url=page_url,
                     headers=headers_raw,
+                    jsonld_objects=parsed_jsonld_blocks,
                     meta_tags=page.meta_tags,
                     date_evidence=page.dates,
+                    paragraphs=page.paragraphs,
+                    html_content=html_raw,
                 )
                 raw_evidence_list.extend(fresh_evs)
             except Exception as f_err:
@@ -262,9 +280,12 @@ class ExtractionManager:
             try:
                 entity_evs = self.entity_extractor.extract_entity_evidence(
                     url=page_url,
+                    jsonld_objects=parsed_jsonld_blocks,
                     contacts=page.contacts,
                     meta_tags=page.meta_tags,
                     links=page.links,
+                    paragraphs=page.paragraphs,
+                    html_content=html_raw,
                 )
                 raw_evidence_list.extend(entity_evs)
             except Exception as e_err:

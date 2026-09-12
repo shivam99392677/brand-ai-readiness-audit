@@ -87,6 +87,8 @@ class FreshnessExtractor:
         visible_dates: Optional[List[str]] = None,
         sitemap_lastmod: Optional[str] = None,
         date_evidence: Optional[DateEvidence] = None,
+        paragraphs: Optional[List[str]] = None,
+        html_content: Optional[str] = None,
     ) -> List[CanonicalEvidence]:
         """Extracts normalized date evidence items from all available sources."""
         evidence_items: List[CanonicalEvidence] = []
@@ -211,16 +213,39 @@ class FreshnessExtractor:
                         )
                     )
 
-        # 5. Visible Text Dates
-        vis_dates: List[str] = []
+        # 5. Visible Text Dates & Footer Copyrights
+        vis_dates: List[Tuple[str, str]] = []  # [(kind, date_str)]
         if visible_dates:
-            vis_dates = visible_dates
+            for vd in visible_dates:
+                vis_dates.append(("visible_date", vd))
         elif date_evidence and date_evidence.visible_dates:
-            vis_dates = date_evidence.visible_dates
+            for vd in date_evidence.visible_dates:
+                vis_dates.append(("visible_date", vd))
 
-        for vd in set(vis_dates):
-            clean_vd = vd.strip()
-            if clean_vd:
+        # Scan paragraphs / html text
+        text_corpus = list(paragraphs or [])
+        if html_content:
+            text_corpus.append(html_content)
+
+        date_patterns = [
+            (r"\b(?:last\s+updated|updated\s+on|modified\s+on|published\s+on|dated?)\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s+[12]\d{3}|\d{1,2}[-/.][A-Za-z0-9]+[-/.][12]\d{3}|[12]\d{3}[-/.](?:0[1-9]|1[0-2])[-/.](?:0[1-9]|[12]\d|3[01]))\b", "visible_date"),
+            (r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+[12]\d{3}\b", "visible_date"),
+            (r"\b\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+[12]\d{3}\b", "visible_date"),
+            (r"(?:copyright|©|\(c\))\s*(?:[12]\d{3}\s*[-–]\s*)?([12]\d{3})", "footer_copyright"),
+        ]
+
+        for p_str in text_corpus:
+            for pat, kind in date_patterns:
+                matches = re.finditer(pat, p_str, re.IGNORECASE)
+                for m in matches:
+                    d_val = m.group(1) if m.groups() else m.group(0)
+                    vis_dates.append((kind, d_val))
+
+        seen_dates = set()
+        for kind, raw_vd in vis_dates:
+            clean_vd = raw_vd.strip()
+            if clean_vd and (kind, clean_vd) not in seen_dates:
+                seen_dates.add((kind, clean_vd))
                 norm_vd = try_normalize_date(clean_vd)
                 evidence_items.append(
                     CanonicalEvidence(
@@ -229,10 +254,10 @@ class FreshnessExtractor:
                         source="html_body",
                         url=url,
                         data={
-                            "kind": "visible_date",
+                            "kind": kind,
                             "raw_value": clean_vd,
                             "normalized_value": norm_vd,
-                            "source_type": "visible_text",
+                            "source_type": kind,
                         },
                         provenance=Provenance(
                             source="raw_html",

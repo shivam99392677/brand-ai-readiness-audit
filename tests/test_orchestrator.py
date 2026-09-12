@@ -44,10 +44,16 @@ def test_orchestrator_invokes_both_skills_and_aggregates_findings():
     orchestrator = AuditOrchestrator()
     report = orchestrator.execute_audit("https://example.com", html_override=html, status_code_override=200)
 
-    # 1. Proves both skills executed
-    assert report.skills_run == ["crawl-render-audit", "structured-data-audit"]
+    # 1. Proves all 6 skills executed
+    assert len(report.skills_run) == 6
+    assert "crawl-render-audit" in report.skills_run
+    assert "structured-data-audit" in report.skills_run
+    assert "fact-quality-audit" in report.skills_run
+    assert "freshness-corroboration" in report.skills_run
+    assert "entity-identity-audit" in report.skills_run
+    assert "engagement-audit" in report.skills_run
 
-    # 2. Proves findings from both skills appear in the final report
+    # 2. Proves findings from skills appear in the final report
     skills_in_findings = set(f.skill for f in report.findings)
     assert "crawl-render-audit" in skills_in_findings
     assert "structured-data-audit" in skills_in_findings

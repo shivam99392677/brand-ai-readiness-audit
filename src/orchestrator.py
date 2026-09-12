@@ -1,13 +1,18 @@
-"""Audit Orchestrator - Master Entrypoint skill for marketplace audit package with site-wide crawler integration."""
+"""Audit Orchestrator - Master Entrypoint coordinating crawler, ExtractionManager, 6 analysis skills, and Adobe Report Composer."""
 
 import argparse
 import json
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urlparse
 
-from src.analysis.crawl_render_audit import audit_crawl_render_skill
-from src.analysis.structured_data_audit import audit_structured_data
+from src.analysis.crawl_render_audit import run_crawl_render_audit
+from src.analysis.engagement_audit import run_engagement_audit
+from src.analysis.entity_identity_audit import run_entity_identity_audit
+from src.analysis.fact_quality_audit import run_fact_quality_audit
+from src.analysis.freshness_corroboration import run_freshness_corroboration
+from src.analysis.structured_data_audit import run_structured_data_audit
 from src.crawler.engine import CrawlConfig, CrawlManifest, SiteCrawler
+from src.extraction.extraction_manager import ExtractionManager
 from src.models import (
     AuditReport,
     Evidence,
@@ -15,6 +20,8 @@ from src.models import (
     FindingSeverity,
     FindingStatus,
 )
+from src.reporting.composer import compose_adobe_report, save_adobe_report
+from src.shared.evidence_schema import ExtractionResult
 
 
 def validate_target_url(url: str) -> str:
@@ -28,28 +35,18 @@ def validate_target_url(url: str) -> str:
     return cleaned
 
 
-def _wrap_crawl_render(url: str, html: str, headers: Dict[str, str], status_code: int, crawl_manifest: Optional[CrawlManifest] = None) -> List[Finding]:
-    return audit_crawl_render_skill(
-        url=url,
-        html_content=html,
-        headers=headers,
-        status_code=status_code,
-        crawl_manifest=crawl_manifest,
-    )
-
-
-def _wrap_structured_data(url: str, html: str, headers: Dict[str, str], status_code: int, crawl_manifest: Optional[CrawlManifest] = None) -> List[Finding]:
-    return audit_structured_data(html_content=html, url=url)
-
-
 DEFAULT_SKILL_REGISTRY: Dict[str, Callable[..., List[Finding]]] = {
-    "crawl-render-audit": _wrap_crawl_render,
-    "structured-data-audit": _wrap_structured_data,
+    "crawl-render-audit": run_crawl_render_audit,
+    "structured-data-audit": run_structured_data_audit,
+    "fact-quality-audit": run_fact_quality_audit,
+    "freshness-corroboration": run_freshness_corroboration,
+    "entity-identity-audit": run_entity_identity_audit,
+    "engagement-audit": run_engagement_audit,
 }
 
 
 class AuditOrchestrator:
-    """Master Entrypoint Orchestrator coordinating site-wide discovery and specialized audit skills."""
+    """Master Entrypoint Orchestrator coordinating site-wide discovery, extraction, and 6 specialized audit skills."""
 
     def __init__(
         self,
@@ -59,6 +56,7 @@ class AuditOrchestrator:
         self.skill_registry = skill_registry if skill_registry is not None else DEFAULT_SKILL_REGISTRY
         self.crawl_config = crawl_config or CrawlConfig()
         self.crawler = SiteCrawler(config=self.crawl_config)
+        self.extraction_manager = ExtractionManager()
 
     def execute_audit(
         self,
@@ -67,8 +65,9 @@ class AuditOrchestrator:
         headers_override: Optional[Dict[str, str]] = None,
         status_code_override: Optional[int] = None,
         custom_fetcher: Optional[Callable[[str], tuple]] = None,
+        output_file: Optional[str] = None,
     ) -> AuditReport:
-        """Executes the site-wide discovery, bounded crawl, sub-skill delegation, and report synthesis."""
+        """Executes site-wide discovery, bounded crawl, evidence extraction, 6 sub-skills, and Adobe report synthesis."""
         valid_url = validate_target_url(target_url)
 
         # 1. Execute site-wide discovery & crawl
@@ -78,7 +77,10 @@ class AuditOrchestrator:
             custom_fetcher=custom_fetcher,
         )
 
-        # Get primary homepage page evidence
+        # 2. Execute General Evidence Extraction Layer
+        extraction_result: ExtractionResult = self.extraction_manager.extract(crawl_manifest)
+
+        # Get primary homepage metadata for backward-compatibility fallbacks
         primary_page = next((p for p in crawl_manifest.pages if p.url == valid_url or p.depth == 0), None)
         if primary_page:
             html_content = primary_page.html_content
@@ -92,25 +94,34 @@ class AuditOrchestrator:
         skills_run: List[str] = []
         all_findings: List[Finding] = []
 
-        # 2. Delegate execution to registered sub-skills
+        # 3. Delegate execution to all 6 registered analysis skills consuming full evidence
         for skill_id, skill_fn in self.skill_registry.items():
             skills_run.append(skill_id)
             try:
+                # Try canonical signature (evidence=extraction_result, website=crawl_manifest.website_evidence)
                 try:
                     findings = skill_fn(
-                        url=valid_url,
-                        html=html_content,
-                        headers=response_headers,
-                        status_code=status_code,
-                        crawl_manifest=crawl_manifest,
+                        evidence=extraction_result,
+                        website=crawl_manifest.website_evidence,
                     )
                 except TypeError:
-                    findings = skill_fn(
-                        url=valid_url,
-                        html=html_content,
-                        headers=response_headers,
-                        status_code=status_code,
-                    )
+                    # Fallback to legacy signature for custom wrapped skills
+                    try:
+                        findings = skill_fn(
+                            url=valid_url,
+                            html=html_content,
+                            headers=response_headers,
+                            status_code=status_code,
+                            crawl_manifest=crawl_manifest,
+                        )
+                    except TypeError:
+                        findings = skill_fn(
+                            url=valid_url,
+                            html=html_content,
+                            headers=response_headers,
+                            status_code=status_code,
+                        )
+
                 if isinstance(findings, list):
                     all_findings.extend(findings)
             except Exception as skill_err:
@@ -135,7 +146,12 @@ class AuditOrchestrator:
                 )
                 all_findings.append(err_finding)
 
-        # 3. Synthesize final AuditReport with top-level crawl manifest & summary
+        # 4. Compose Adobe Report JSON
+        adobe_report = compose_adobe_report(target_url=valid_url, findings=all_findings)
+        if output_file:
+            save_adobe_report(adobe_report, filepath=output_file)
+
+        # 5. Synthesize final AuditReport
         report = AuditReport.create(
             url=valid_url,
             crawl=crawl_manifest.model_dump(),
@@ -151,12 +167,16 @@ def main():
     parser.add_argument("url", help="Single target URL to audit (e.g. https://example.com)")
     parser.add_argument("--max-pages", type=int, default=100, help="Maximum pages to crawl")
     parser.add_argument("--max-depth", type=int, default=3, help="Maximum crawl depth")
+    parser.add_argument("--output", "-o", default="report.json", help="Path to save Adobe report.json")
     args = parser.parse_args()
 
     config = CrawlConfig(max_pages=args.max_pages, max_depth=args.max_depth)
     orchestrator = AuditOrchestrator(crawl_config=config)
-    report = orchestrator.execute_audit(target_url=args.url)
-    print(json.dumps(report.model_dump(), indent=2))
+    report = orchestrator.execute_audit(target_url=args.url, output_file=args.output)
+    
+    # Also print the Adobe format report to stdout
+    adobe_rep = compose_adobe_report(target_url=args.url, findings=report.findings)
+    print(json.dumps(adobe_rep, indent=2))
 
 
 if __name__ == "__main__":

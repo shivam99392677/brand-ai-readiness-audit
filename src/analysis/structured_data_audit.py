@@ -586,3 +586,62 @@ def audit_structured_data(html_content: str, url: str) -> List[Finding]:
     """Helper function to execute structured data audit checks on HTML string content."""
     auditor = StructuredDataAuditor(html_content=html_content, url=url)
     return auditor.run_all_checks()
+
+
+def run_structured_data_audit(
+    evidence: Any,
+    website: Optional[Any] = None,
+    html_content: Optional[str] = None,
+    url: Optional[str] = None,
+    **kwargs,
+) -> List[Finding]:
+    """Canonical entrypoint for structured data audit skill consuming ExtractionResult & WebsiteEvidence."""
+    findings: List[Finding] = []
+    
+    # 1. Direct HTML fallback for backward compatibility
+    if html_content is not None and url is not None:
+        return audit_structured_data(html_content=html_content, url=url)
+    
+    # 2. Extract from WebsiteEvidence pages if provided
+    pages_to_audit = []
+    if website is not None and hasattr(website, "pages") and website.pages:
+        pages_to_audit = website.pages
+    elif hasattr(evidence, "evidence"):
+        # Find raw HTML or unique page URLs from ExtractionResult
+        raw_html_evs = [e for e in evidence.evidence if e.type == "raw_html" and e.data.get("html_content")]
+        for rhe in raw_html_evs:
+            pages_to_audit.append(type("DummyPage", (), {"url": rhe.url, "html_content": rhe.data.get("html_content"), "page_role": "unknown"})())
+
+    if not pages_to_audit:
+        target_u = getattr(website, "start_url", "https://example.com") if website else "https://example.com"
+        return [Finding(
+            skill="structured-data-audit",
+            check_id="SD-001",
+            title="JSON-LD Schema Verification",
+            status=FindingStatus.PASS,
+            severity=FindingSeverity.INFO,
+            description="No crawlable HTML pages required schema evaluation.",
+            evidence=[Evidence(source_url=target_u, evidence_type="schema_info", observed={"status": "no_pages"})],
+            recommendation="Add Schema.org JSON-LD to primary brand and product pages.",
+        )]
+
+    for page in pages_to_audit[:10]:  # Audit up to 10 representative pages
+        p_html = getattr(page, "html_content", None) or ""
+        p_url = getattr(page, "url", "https://example.com")
+        p_role = getattr(page, "page_role", "unknown")
+
+        if p_html:
+            auditor = StructuredDataAuditor(html_content=p_html, url=p_url)
+            page_findings = auditor.run_all_checks()
+
+            for f in page_findings:
+                # Rule: Never report "no schema on site" as a defect for non-product/general pages
+                if f.check_id == "SD-001" and f.status in (FindingStatus.WARNING, FindingStatus.FAIL):
+                    if p_role not in ("product", "pricing") and "product" not in p_url.lower():
+                        # Soften to INFO / PASS so it does not appear as a defect
+                        f.status = FindingStatus.PASS
+                        f.severity = FindingSeverity.INFO
+                        f.description = "Informational: Non-product page contains no JSON-LD schema (optional)."
+                findings.append(f)
+
+    return findings

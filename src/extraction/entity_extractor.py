@@ -6,7 +6,7 @@ This module does NOT evaluate identity consistency or NAP uniformity.
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 from src.evidence.models import ContactEvidence
 from src.extraction.structured_data import extract_schema_objects, get_type_names
 from src.shared.evidence_schema import CanonicalEvidence, EvidenceType, Provenance
@@ -33,6 +33,8 @@ class EntityExtractor:
         contacts: Optional[ContactEvidence] = None,
         meta_tags: Optional[List[Dict[str, str]]] = None,
         links: Optional[List[Any]] = None,
+        paragraphs: Optional[List[str]] = None,
+        html_content: Optional[str] = None,
     ) -> List[CanonicalEvidence]:
         """Extracts normalized entity identity evidence items."""
         evidence_items: List[CanonicalEvidence] = []
@@ -202,61 +204,85 @@ class EntityExtractor:
                             )
                         )
 
-        # 2. Extract from Contact Signals (DOM Text)
+        # 2. Extract from Contact Signals (DOM Text and Paragraphs)
+        emails_found: Set[str] = set()
+        phones_found: Set[str] = set()
+        addresses_found: Set[str] = set()
+
         if contacts:
-            for email_str in contacts.emails:
-                evidence_items.append(
-                    CanonicalEvidence(
-                        id="",
-                        type=EvidenceType.ENTITY_EMAIL,
-                        source="html_body",
-                        url=url,
-                        data={"email": email_str, "source": "dom_text"},
-                        provenance=Provenance(
-                            source="raw_html",
-                            extraction_method="regex-search",
-                            url=url,
-                            location="<body> > text()",
-                            context=f"email:{email_str}",
-                        ),
-                    )
-                )
+            emails_found.update(contacts.emails)
+            phones_found.update(contacts.phone_numbers)
+            addresses_found.update(contacts.addresses)
 
-            for phone_str in contacts.phone_numbers:
-                evidence_items.append(
-                    CanonicalEvidence(
-                        id="",
-                        type=EvidenceType.ENTITY_PHONE,
-                        source="html_body",
-                        url=url,
-                        data={"phone": phone_str, "source": "dom_text"},
-                        provenance=Provenance(
-                            source="raw_html",
-                            extraction_method="regex-search",
-                            url=url,
-                            location="<body> > text()",
-                            context=f"phone:{phone_str}",
-                        ),
-                    )
-                )
+        text_corpus = list(paragraphs or [])
+        if html_content:
+            text_corpus.append(html_content)
 
-            for addr_str in contacts.addresses:
-                evidence_items.append(
-                    CanonicalEvidence(
-                        id="",
-                        type=EvidenceType.ENTITY_ADDRESS,
-                        source="html_body",
+        email_pattern = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
+        phone_pattern = r"\+?\b(?:\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b"
+
+        for p_str in text_corpus:
+            for em in re.findall(email_pattern, p_str):
+                emails_found.add(em)
+            for ph in re.findall(phone_pattern, p_str):
+                # Filter out pure numbers or false positives
+                digits = re.sub(r"\D", "", ph)
+                if len(digits) >= 10:
+                    phones_found.add(ph)
+
+        for email_str in sorted(list(emails_found)):
+            evidence_items.append(
+                CanonicalEvidence(
+                    id="",
+                    type=EvidenceType.ENTITY_EMAIL,
+                    source="html_body",
+                    url=url,
+                    data={"email": email_str, "source": "dom_text"},
+                    provenance=Provenance(
+                        source="raw_html",
+                        extraction_method="regex-search",
                         url=url,
-                        data={"address": addr_str, "source": "dom_text"},
-                        provenance=Provenance(
-                            source="raw_html",
-                            extraction_method="regex-search",
-                            url=url,
-                            location="<body> > text()",
-                            context=addr_str,
-                        ),
-                    )
+                        location="<body> > text()",
+                        context=f"email:{email_str}",
+                    ),
                 )
+            )
+
+        for phone_str in sorted(list(phones_found)):
+            evidence_items.append(
+                CanonicalEvidence(
+                    id="",
+                    type=EvidenceType.ENTITY_PHONE,
+                    source="html_body",
+                    url=url,
+                    data={"phone": phone_str, "source": "dom_text"},
+                    provenance=Provenance(
+                        source="raw_html",
+                        extraction_method="regex-search",
+                        url=url,
+                        location="<body> > text()",
+                        context=f"phone:{phone_str}",
+                    ),
+                )
+            )
+
+        for addr_str in sorted(list(addresses_found)):
+            evidence_items.append(
+                CanonicalEvidence(
+                    id="",
+                    type=EvidenceType.ENTITY_ADDRESS,
+                    source="html_body",
+                    url=url,
+                    data={"address": addr_str, "source": "dom_text"},
+                    provenance=Provenance(
+                        source="raw_html",
+                        extraction_method="regex-search",
+                        url=url,
+                        location="<body> > text()",
+                        context=addr_str,
+                    ),
+                )
+            )
 
         # 3. Extract Social Links from Anchor Links
         if links:
