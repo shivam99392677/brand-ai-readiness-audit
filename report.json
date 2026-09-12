@@ -1,149 +1,87 @@
 {
-  "site": "www.youtube.com",
-  "audited_at": "2026-09-12T15:07:55Z",
+  "site": "example.com",
+  "audited_at": "2026-09-12T17:00:26Z",
   "summary": {
-    "total_findings": 9,
+    "total_findings": 5,
     "critical": 0,
-    "high": 3,
-    "medium": 4,
-    "low": 2
+    "high": 0,
+    "medium": 2,
+    "low": 3
   },
   "findings": [
     {
       "id": "F-001",
-      "title": "Stale Content Lacking Recent Modification Signal",
-      "severity": "high",
-      "evidence": "Detected 1 core page(s) with newest content date older than 12 months (2024) with no recent update signals.",
+      "title": "Missing External Entity Corroboration Links",
+      "severity": "medium",
+      "evidence": "No external sameAs profiles or Wikidata Knowledge Graph references were detected on the domain to corroborate brand identity.",
       "suggested_action": {
-        "summary": "Publish updated dateModified metadata and refresh evergreen content to prevent generative search decay.",
-        "priority": "P2"
+        "summary": "Add sameAs URLs to Organization schema linking to authoritative profiles (Wikidata, Wikipedia, Crunchbase, verified social profiles) for cross-platform corroboration.",
+        "priority": "medium"
       },
-      "check_id": "FC-02",
+      "check_id": "FC-03",
       "category": "freshness-corroboration",
       "affected_urls": [
-        "https://www.youtube.com/"
+        "https://example.com/"
       ]
     },
     {
       "id": "F-002",
-      "title": "Brand Entity Name Discrepancy",
-      "severity": "high",
-      "evidence": "Detected conflicting brand or organization names across Schema.org markup, page title, and headings.",
+      "title": "Missing Canonical sameAs Social Profiles",
+      "severity": "medium",
+      "evidence": "No sameAs entity reference links were discovered in Organization schema or structured markup.",
       "suggested_action": {
-        "summary": "Ensure the primary brand name in Organization JSON-LD strictly matches page titles and brand headers.",
-        "priority": "P2"
+        "summary": "Add sameAs URLs to Organization schema linking to official social profiles and Knowledge Graph entities.",
+        "priority": "medium"
       },
-      "check_id": "EI-01",
+      "check_id": "EI-02",
       "category": "entity-identity-audit",
       "affected_urls": [
-        "https://www.youtube.com/"
+        "https://example.com/"
       ]
     },
     {
       "id": "F-003",
-      "title": "Landing Screen Missing Core Orientation Elements (Who/What/Next)",
-      "severity": "high",
-      "evidence": "Homepage landing area is missing essential visitor orientation elements: Primary H1 (Who / What), Descriptive Subhead / Value Proposition.",
+      "title": "Meta Description Presence",
+      "severity": "low",
+      "evidence": "Page is missing a meta description tag. Observed: [<head> > <meta name='description'>] description: None, length: 0",
       "suggested_action": {
-        "summary": "Ensure the primary screenful immediately states who the brand is (H1), what it provides (subheading), and what the visitor should do next (actionable CTA).",
-        "priority": "P2"
+        "summary": "Add a concise meta description summarizing the page content.",
+        "priority": "low"
       },
-      "check_id": "EG-01",
-      "category": "engagement-audit",
+      "check_id": "CR-006",
+      "category": "crawl-render-audit",
       "affected_urls": [
-        "https://www.youtube.com/"
+        "https://example.com/"
       ]
     },
     {
       "id": "F-004",
-      "title": "Text Extractability & Word Boundary Integrity",
-      "severity": "medium",
-      "evidence": "Detected suspicious word-boundary collapse in extracted text (e.g. 'AboutPressCopyrightContact'). Words run together without space delimiters in DOM extraction.",
+      "title": "Discoverable Internal Links",
+      "severity": "low",
+      "evidence": "No discoverable internal links were found in the HTML anchors.",
       "suggested_action": {
-        "summary": "Ensure spaces or block elements separate words in HTML markup instead of relying purely on visual CSS spacing.",
-        "priority": "P3"
+        "summary": "Expose internal site pages via standard HTML anchor links.",
+        "priority": "low"
       },
-      "check_id": "CR-004",
+      "check_id": "CR-008",
       "category": "crawl-render-audit",
       "affected_urls": [
-        "https://www.youtube.com/"
+        "https://example.com/"
       ]
     },
     {
       "id": "F-005",
-      "title": "Content Discoverability & Structural Sections",
-      "severity": "medium",
-      "evidence": "OBSERVATION: Page contains minimal visible text (13 words extracted). INTERPRETATION: Key site content may be sparse or locked behind client-side rendering.",
+      "title": "Canonical URL Declaration",
+      "severity": "low",
+      "evidence": "No canonical URL link tag (<link rel='canonical'>) was declared.",
       "suggested_action": {
-        "summary": "RECOMMENDATION: Expose core narrative and content sections directly in static HTML markup.",
-        "priority": "P3"
+        "summary": "Add a self-referential canonical URL tag.",
+        "priority": "low"
       },
-      "check_id": "CR-010",
+      "check_id": "CR-009",
       "category": "crawl-render-audit",
       "affected_urls": [
-        "https://www.youtube.com/"
-      ]
-    },
-    {
-      "id": "F-006",
-      "title": "Duplicate or Conflicting Structured Data",
-      "severity": "medium",
-      "evidence": "Detected conflicting property values across duplicate schema declarations for type(s): VideoObject.",
-      "suggested_action": {
-        "summary": "Consolidate duplicate schema declarations into a single canonical entity object.",
-        "priority": "P3"
-      },
-      "check_id": "SD-006",
-      "category": "structured-data-audit",
-      "affected_urls": [
-        "https://www.youtube.com/about/press"
-      ]
-    },
-    {
-      "id": "F-007",
-      "title": "Deep Interior Pages Lack Breadcrumb Navigation",
-      "severity": "medium",
-      "evidence": "Identified 3 interior page(s) at depth >= 2 lacking breadcrumb hierarchy or parent navigation context.",
-      "suggested_action": {
-        "summary": "Add BreadcrumbList schema markup and visible breadcrumb navigation on deep interior pages to improve human and AI navigational understanding.",
-        "priority": "P3"
-      },
-      "check_id": "EG-03",
-      "category": "engagement-audit",
-      "affected_urls": [
-        "https://www.youtube.com/about/copyright",
-        "https://www.youtube.com/about/press",
-        "https://www.youtube.com/t/contact_us"
-      ]
-    },
-    {
-      "id": "F-008",
-      "title": "Heading Structure & H1 Quality",
-      "severity": "low",
-      "evidence": "No <h1> heading element was found on the page. Observed: [<body> heading elements] h1_count: 0, h1_texts: [], total_headings: 0",
-      "suggested_action": {
-        "summary": "Include a primary <h1> heading summarizing the main page topic.",
-        "priority": "P4"
-      },
-      "check_id": "CR-007",
-      "category": "crawl-render-audit",
-      "affected_urls": [
-        "https://www.youtube.com/"
-      ]
-    },
-    {
-      "id": "F-009",
-      "title": "Schema Type Detection",
-      "severity": "low",
-      "evidence": "No explicit @type or microdata itemtype declarations were detected.",
-      "suggested_action": {
-        "summary": "Add explicit @type properties to JSON-LD objects.",
-        "priority": "P4"
-      },
-      "check_id": "SD-003",
-      "category": "structured-data-audit",
-      "affected_urls": [
-        "https://www.youtube.com/"
+        "https://example.com/"
       ]
     }
   ]

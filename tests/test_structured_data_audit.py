@@ -138,9 +138,8 @@ def test_missing_json_ld():
     findings = audit_structured_data(html, "https://example.com")
     finding_map = {f.check_id: f for f in findings}
 
-    # SD-001: Warning (low severity, not critical fail)
-    assert finding_map["SD-001"].status == FindingStatus.WARNING
-    assert finding_map["SD-001"].severity == FindingSeverity.LOW
+    # SD-001: Missing schema on plain page is NOT_APPLICABLE (not a defect)
+    assert finding_map["SD-001"].status == FindingStatus.NOT_APPLICABLE
 
     # SD-002: Not applicable
     assert finding_map["SD-002"].status == FindingStatus.NOT_APPLICABLE

@@ -1,140 +1,127 @@
 # Brand AI Readiness Audit
 
 > **Adobe University Hackathon 2026 — Round 3 Project**  
-> An Agent Skill Marketplace package designed to perform comprehensive, evidence-first audits of brand websites for AI discoverability, factual content quality, entity consistency, structured data, and AI interaction readiness.
+> An Agent Skill Marketplace package designed to perform comprehensive, evidence-first audits of brand websites for AI discoverability, factual content quality, entity consistency, structured data, crawl/render accessibility, and on-site visitor engagement.
 
 ---
 
-> [!IMPORTANT]  
-> **Development Status: Initial Scaffolding Phase**  
-> This repository is currently in the scaffolding and architecture phase. The audit skills, crawler pipelines, and analytical evaluation logic defined here represent planned specifications. No active crawling or auditing logic is implemented yet.
+## 🚀 Quickstart & Evaluation for Judges
 
----
-
-## 🎯 Purpose & Problem Statement
-
-As Generative Engine Optimization (GEO), Answer Engine Optimization (AEO), and autonomous AI agents become primary discovery channels for consumers, brands face a critical challenge: **How visible, readable, accurate, and authoritative is their digital presence to AI models and agents?**
-
-Traditional SEO tools focus on search engine keyword rankings and page speed performance. They fail to evaluate:
-- **AI Accessibility & Rendering:** Can LLM web crawlers (e.g., GPTBot, ClaudeBot, PerplexityBot) parse and execute client-side JS to reach key brand data?
-- **Factual Machine-Readability:** Are claims, product specs, pricing, and policies clear and un-ambiguous enough to prevent AI hallucinations?
-- **Entity Identity & Consistency:** Does the brand present a unified, canonical entity model that Knowledge Graphs can reliably absorb?
-- **Freshness & Corroboration:** Are update timestamps explicit, and is the brand's core data corroborated across authoritative web sources?
-
-The **Brand AI Readiness Audit** package addresses these challenges by delivering an evidence-backed framework that assesses a website's readiness for the AI-driven search ecosystem.
-
----
-
-## 🏗️ High-Level Architecture
-
-The framework operates on an **Evidence-First Architecture** (see [`docs/decisions.md`](docs/decisions.md) - ADR-001). Deterministic checks extract verified evidence first, and LLM reasoning operates exclusively on that evidence rather than inventing ungrounded observations.
-
-```
-Website Under Audit
-  │
-  ▼
-Crawl & Rendering Pipeline (Playwright / HTTP Parser)
-  │
-  ▼
-Evidence Store (DOM Snapshots, Headers, Schema JSON-LD, Text Snippets)
-  │
-  ▼
-Specialized Audit Skills (Parallel Execution)
-  ├── 1. Crawl & Render Audit
-  ├── 2. Structured Data Audit
-  ├── 3. Fact Quality Audit
-  ├── 4. Freshness & Corroboration
-  ├── 5. Entity Identity & Consistency
-  └── 6. On-Site AI Engagement
-  │
-  ▼
-Evidence Validation & Normalized Scoring
-  │
-  ▼
-Prioritized Remediation & Executive Audit Report
+### 1. Installation
+Install the lightweight dependencies (Python 3.9+):
+```bash
+pip install -r requirements.txt
 ```
 
----
-
-## 🧩 Marketplace Skills Summary
-
-The package exposes a single entrypoint skill—**`audit-orchestrator`**—which coordinates six specialized audit sub-skills:
-
-| Skill | Path | Description |
-| :--- | :--- | :--- |
-| **`audit-orchestrator`** *(Entrypoint)* | [`skills/audit-orchestrator/SKILL.md`](skills/audit-orchestrator/SKILL.md) | Coordinates end-to-end audit workflow, invokes sub-skills, aggregates findings, and computes final scores. |
-| **`crawl-render-audit`** | [`skills/crawl-render-audit/SKILL.md`](skills/crawl-render-audit/SKILL.md) | Evaluates robots.txt AI rules, HTTP headers, SSR vs. CSR rendering, and crawler access limits. |
-| **`structured-data-audit`** | [`skills/structured-data-audit/SKILL.md`](skills/structured-data-audit/SKILL.md) | Inspects JSON-LD, Microdata, OpenGraph, and semantic HTML schema validity and coverage. |
-| **`fact-quality-audit`** | [`skills/fact-quality-audit/SKILL.md`](skills/fact-quality-audit/SKILL.md) | Measures claim clarity, ambiguity, factual consistency, and vulnerability to model hallucination. |
-| **`freshness-corroboration`** | [`skills/freshness-corroboration/SKILL.md`](skills/freshness-corroboration/SKILL.md) | Validates modification dates, content freshness signals, and external source corroboration. |
-| **`entity-identity-audit`** | [`skills/entity-identity-audit/SKILL.md`](skills/entity-identity-audit/SKILL.md) | Checks brand Name-Address-Phone (NAP) uniformity, Organization schema, and Knowledge Graph alignment. |
-| **`engagement-audit`** | [`skills/engagement-audit/SKILL.md`](skills/engagement-audit/SKILL.md) | Assesses readiness for direct AI agent interaction, API availability, and site search interoperability. |
-
----
-
-## 📁 Repository Structure
-
+### 2. Run Single-Command Audit (Canonical Adobe Output)
+Audit any brand domain and generate the standardized Adobe `report.json`:
+```bash
+python -m src.orchestrator https://example.com -o report.json
 ```
-brand-ai-readiness-audit/
-├── README.md                          # Project documentation and roadmap
-├── marketplace.json                   # Agent Skill Marketplace manifest
-├── LICENSE                            # MIT License
-├── .gitignore                         # Build, environment, and runtime ignore patterns
-│
-├── docs/                              # Project design and research documentation
-│   ├── audit-matrix.md                # Signal, evidence, scoring, and severity matrix
-│   ├── architecture.md                # System flow, separation of concerns, and pipeline
-│   ├── research.md                    # Research findings and tool evaluations log
-│   └── decisions.md                   # Architecture Decision Records (ADRs)
-│
-├── skills/                            # Agent Skill Marketplace definitions
-│   ├── audit-orchestrator/            # Entrypoint orchestrator skill
-│   │   └── SKILL.md
-│   ├── crawl-render-audit/            # Crawl accessibility audit skill
-│   │   ├── SKILL.md
-│   │   ├── scripts/
-│   │   └── references/
-│   ├── structured-data-audit/         # Structured data audit skill
-│   │   ├── SKILL.md
-│   │   ├── scripts/
-│   │   └── references/
-│   ├── fact-quality-audit/            # Fact & content quality audit skill
-│   │   ├── SKILL.md
-│   │   └── references/
-│   ├── freshness-corroboration/        # Content freshness audit skill
-│   │   ├── SKILL.md
-│   │   └── references/
-│   ├── entity-identity-audit/         # Entity & identity audit skill
-│   │   ├── SKILL.md
-│   │   └── references/
-│   └── engagement-audit/              # On-site AI engagement skill
-│       ├── SKILL.md
-│       └── references/
-│
-├── tests/                             # Evaluation schemas and mock test data
-│   ├── test-sites.json                # Test target site registry
-│   ├── expected-findings.json         # Benchmark audit results schema
-│   └── evaluation.md                  # Verification and benchmark plan
-│
-├── src/                               # Source code modules (scaffolding)
-│   ├── crawler/                       # Web crawling and rendering engines
-│   ├── extraction/                    # DOM, JSON-LD, and text extractor modules
-│   ├── analysis/                      # Deterministic and LLM evaluation engines
-│   └── reporting/                     # Report generation and export utilities
-│
-└── config/                            # Runtime configuration
-    └── audit-config.yaml              # Audit thresholds and feature flags
+
+Or with custom crawl depth and page limits:
+```bash
+python -m src.orchestrator https://example.com --max-pages 50 --max-depth 3 -o report.json
+```
+
+### 3. Run Automated Tests
+Execute the complete test suite:
+```bash
+pytest
+# or
+python -m pytest
+```
+
+### 4. Interactive GUI Test Harness (Optional Local Inspector)
+Launch the lightweight visual test harness bound to `0.0.0.0:8080`:
+```bash
+python -m gui.app
+```
+Then open `http://localhost:8080/` in your browser.
+
+---
+
+## 🏗️ Architecture & Pipeline Flow
+
+The framework operates on a strict **Evidence-First Architecture**:
+
+```mermaid
+flowchart TD
+    A["Target Website URL"] --> B["SiteCrawler (Discovery & Crawl)"]
+    B --> C["ExtractionManager (EV-00001 Canonical Evidence Store)"]
+    C --> D1["1. crawl-render-audit"]
+    C --> D2["2. structured-data-audit"]
+    C --> D3["3. fact-quality-audit"]
+    C --> D4["4. freshness-corroboration"]
+    C --> D5["5. entity-identity-audit"]
+    C --> D6["6. engagement-audit"]
+    D1 & D2 & D3 & D4 & D5 & D6 --> E["AdobeReportComposer"]
+    E --> F["Adobe Report JSON (report.json)"]
 ```
 
 ---
 
-## 🚀 Development Roadmap
+## 🧩 Agent Skill Marketplace Manifest (`marketplace.json`)
 
-- [x] **Phase 1: Project Scaffolding & Marketplace Manifest** (Current)
-- [ ] **Phase 2: Day-1 Research & Audit Matrix Refinement**
-- [ ] **Phase 3: Crawler Engine & Evidence Store Implementation**
-- [ ] **Phase 4: Specialized Skill Logic & Deterministic Checkers**
-- [ ] **Phase 5: Benchmark Evaluation & Report Generator**
+The package exposes a single entrypoint skill—**`audit-orchestrator`**—which coordinates six specialized analysis sub-skills:
+
+| Skill Name | Path | Entrypoint | Description |
+| :--- | :--- | :--- | :--- |
+| **`audit-orchestrator`** | `./skills/audit-orchestrator` | **`true`** | Master orchestrator coordinating crawling, evidence extraction, 6 audit sub-skills, and Adobe report synthesis. |
+| **`crawl-render-audit`** | `./skills/crawl-render-audit` | `false` | Evaluates HTTP status, `robots.txt` AI directives, text extractability, heading structure, and CSR/SSR parity. |
+| **`structured-data-audit`** | `./skills/structured-data-audit` | `false` | Inspects Schema.org JSON-LD syntax, entity completeness on product pages, and visible content consistency. |
+| **`fact-quality-audit`** | `./skills/fact-quality-audit` | `false` | Detects cross-page contradictions (prices, hours, refunds), unitless numbers, and ungrounded superlatives. |
+| **`freshness-corroboration`** | `./skills/freshness-corroboration` | `false` | Validates date consistency, content staleness >12 months (ignoring copyright), and public knowledge graph links. |
+| **`entity-identity-audit`** | `./skills/entity-identity-audit` | `false` | Checks brand entity name uniformity between title/H1 and schema, sameAs URLs (404 detection), and cross-page NAP. |
+| **`engagement-audit`** | `./skills/engagement-audit` | `false` | Evaluates human visitor orientation (Who/What/Next), navigation offerings coverage, breadcrumbs, and CTAs. |
+
+---
+
+## 📋 Adobe Hackathon Report Schema
+
+The output generated at `report.json` adheres strictly to the required Adobe Hackathon JSON schema:
+
+```json
+{
+  "site": "example.com",
+  "audited_at": "2026-09-12T16:45:14Z",
+  "summary": {
+    "total_findings": 6,
+    "critical": 1,
+    "high": 2,
+    "medium": 3,
+    "low": 0
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "Brand Entity Name Discrepancy",
+      "severity": "high",
+      "evidence": "Detected conflicting brand names across Schema.org markup, page title, and headings.",
+      "suggested_action": {
+        "summary": "Ensure the primary brand name in Organization JSON-LD strictly matches page titles and headers.",
+        "priority": "high"
+      },
+      "check_id": "EI-01",
+      "category": "entity-identity-audit",
+      "affected_urls": [
+        "https://example.com/"
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 📦 Submission Packaging (<45 MB)
+
+To create the clean submission ZIP package excluding git history, virtual environments, and caches:
+```bash
+python scripts/pack.py
+# or on Linux/macOS:
+bash scripts/pack.sh
+```
 
 ---
 

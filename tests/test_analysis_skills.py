@@ -95,6 +95,52 @@ def test_fact_quality_fq02_contradictory_prices():
     assert len(fq02[0].evidence) >= 2
 
 
+def test_fact_quality_fq02_contradictory_hours():
+    """Verify FQ-02 detects contradictory operating hours across pages."""
+    pages_data = [
+        {
+            "url": "https://example.com/contact",
+            "title": "Contact Us",
+            "paragraphs": ["Support hours: 9:00 AM - 5:00 PM EST Monday to Friday."],
+        },
+        {
+            "url": "https://example.com/support",
+            "title": "24/7 Support",
+            "paragraphs": ["Our team is available 24/7 to solve your problems."],
+        }
+    ]
+    ext_res = create_mock_extraction_result(pages_data)
+    findings = run_fact_quality_audit(ext_res)
+
+    fq02 = [f for f in findings if f.check_id == "FQ-02"]
+    assert len(fq02) >= 1
+    assert fq02[0].status == FindingStatus.FAIL
+    assert "Operating hours" in fq02[0].description or "differ" in fq02[0].description
+
+
+def test_fact_quality_fq02_contradictory_refund():
+    """Verify FQ-02 detects contradictory refund policies across pages."""
+    pages_data = [
+        {
+            "url": "https://example.com/terms",
+            "title": "Terms of Service",
+            "paragraphs": ["We provide a 30 day money-back guarantee on all licenses."],
+        },
+        {
+            "url": "https://example.com/pricing",
+            "title": "Pricing Plans",
+            "paragraphs": ["Try risk free with our 60 day refund policy."],
+        }
+    ]
+    ext_res = create_mock_extraction_result(pages_data)
+    findings = run_fact_quality_audit(ext_res)
+
+    fq02 = [f for f in findings if f.check_id == "FQ-02"]
+    assert len(fq02) >= 1
+    assert fq02[0].status == FindingStatus.FAIL
+    assert "Refund policy" in fq02[0].description or "refund" in fq02[0].description.lower()
+
+
 def test_fact_quality_fq03_unitless_numbers():
     """Verify FQ-03 detects standalone large numbers without qualifying units."""
     pages_data = [
@@ -259,13 +305,14 @@ def test_entity_identity_ei03_cross_page_nap_phone_conflict():
 # ==============================================================================
 
 def test_engagement_eg01_missing_h1_and_cta():
-    """Verify EG-01 flags landing page with no H1 or CTA."""
+    """Verify EG-01 flags landing page with >=80 words but missing H1 or CTA."""
+    long_desc = "Welcome to our enterprise platform where we deliver high quality services and digital transformation for global clients across multiple industries and verticals worldwide with 24/7 reliability. " * 5
     pages_data = [
         {
             "url": "https://example.com/",
-            "title": "Empty Welcome Page",
+            "title": "Welcome Page",
             "headings": [],  # Missing H1
-            "paragraphs": ["A short note without call to action."],
+            "paragraphs": [long_desc],
             "links": [{"href": "/privacy", "text": "Privacy"}]
         }
     ]
@@ -275,6 +322,25 @@ def test_engagement_eg01_missing_h1_and_cta():
     eg01 = [f for f in findings if f.check_id == "EG-01"]
     assert len(eg01) >= 1
     assert eg01[0].status == FindingStatus.FAIL
+
+
+def test_engagement_eg01_js_shell_low_word_count_not_flagged():
+    """Verify EG-01 does NOT flag JS shells with <80 words (letting crawl-render own CSR blocking)."""
+    pages_data = [
+        {
+            "url": "https://example.com/",
+            "title": "Loading Application",
+            "headings": [],
+            "paragraphs": ["Loading application, please wait..."],
+            "links": []
+        }
+    ]
+    ext_res = create_mock_extraction_result(pages_data)
+    findings = run_engagement_audit(ext_res)
+
+    # Should not emit EG-01 defect
+    eg01_defects = [f for f in findings if f.check_id == "EG-01" and f.status in (FindingStatus.FAIL, FindingStatus.WARNING)]
+    assert len(eg01_defects) == 0
 
 
 def test_engagement_eg03_interior_page_lacking_breadcrumbs():
@@ -331,6 +397,53 @@ def test_engagement_forbidden_checks_not_emitted():
     ]
     ext_res = create_mock_extraction_result(pages_data)
     findings = run_engagement_audit(ext_res)
+
+    check_ids = [f.check_id for f in findings]
+    assert "LLMS-TXT" not in check_ids
+    assert "OPENAPI" not in check_ids
+    assert not any("llms.txt" in (f.description or "").lower() for f in findings)
+
+
+# ==============================================================================
+# Structured Data & Freshness False Positive Regression Tests
+# ==============================================================================
+
+def test_structured_data_sd003_missing_schema_not_defect():
+    """Verify SD-003 and SD-001 do not emit FAIL or WARNING when schema is absent on general page."""
+    pages_data = [
+        {
+            "url": "https://example.com/",
+            "title": "Example Homepage",
+            "headings": [{"level": "h1", "text": "Example"}],
+            "paragraphs": ["Just a simple homepage without schema."],
+            "jsonld_raw_blocks": []
+        }
+    ]
+    ext_res = create_mock_extraction_result(pages_data)
+    findings = run_structured_data_audit(ext_res)
+
+    defects = [f for f in findings if f.check_id in ("SD-001", "SD-003") and f.status in (FindingStatus.FAIL, FindingStatus.WARNING)]
+    assert len(defects) == 0
+
+
+def test_freshness_fc02_living_homepage_without_date_not_stale():
+    """Verify FC-02 does not flag living homepage as stale when no explicit timestamps exist."""
+    pages_data = [
+        {
+            "url": "https://example.com/",
+            "title": "Living Homepage",
+            "paragraphs": [
+                "Welcome to our active website.",
+                "Copyright © 2026 Example Corp."
+            ],
+            "jsonld_raw_blocks": []
+        }
+    ]
+    ext_res = create_mock_extraction_result(pages_data)
+    findings = run_freshness_corroboration(ext_res)
+
+    fc02_defects = [f for f in findings if f.check_id == "FC-02" and f.status in (FindingStatus.FAIL, FindingStatus.WARNING)]
+    assert len(fc02_defects) == 0
 
     check_ids = [f.check_id for f in findings]
     assert "LLMS-TXT" not in check_ids
@@ -455,14 +568,14 @@ def test_adobe_report_composer_schema_and_formatting():
     assert f1["severity"] == "critical"
     assert f1["title"] == "Brand Identity Conflict"
     assert isinstance(f1["suggested_action"], dict)
-    assert f1["suggested_action"]["priority"] == "P1"
+    assert f1["suggested_action"]["priority"] == "high"
     assert isinstance(f1["evidence"], str) and len(f1["evidence"]) > 0
 
     f2 = public_findings[1]
     assert f2["id"] == "F-002"
     assert f2["severity"] == "high"
     assert f2["title"] == "Contradictory Pricing"
-    assert f2["suggested_action"]["priority"] == "P2"
+    assert f2["suggested_action"]["priority"] == "high"
     assert isinstance(f2["evidence"], str) and len(f2["evidence"]) > 0
 
     # Verify JSON serializability
