@@ -1,6 +1,6 @@
 ---
-name: Entity Identity & Consistency
-description: Audits brand entity attributes, NAP (Name, Address, Phone) consistency, Knowledge Graph alignment, and canonical branding.
+name: entity-identity-audit
+description: Audits brand entity naming consistency between title/H1 and schema, sameAs links, and cross-page NAP (Name, Address, Phone) uniformity.
 ---
 
 # Entity Identity & Consistency Skill
@@ -11,21 +11,14 @@ Audits brand identity signals to ensure AI Knowledge Graphs and search engines c
 ## When to Use
 Invoked by `audit-orchestrator` during entity validation.
 
-## High-Level Responsibilities
-- Audit Name, Address, Phone (NAP) uniformity across domain pages.
-- Validate `Organization` schema `sameAs` array links (social profiles, Wikipedia, Wikidata).
-- Detect conflicting brand names, obsolete trade names, or mismatched logo asset URLs.
-- Check Knowledge Graph entity alignment.
+## Standard Check Matrix
 
-## Inputs
-- `extracted_entity_attributes` (JSON object containing scraped brand names, addresses, social URIs)
-- `canonical_brand_profile` (expected brand entity configuration)
+| Check ID | Check Title | Severity | Description |
+| :--- | :--- | :--- | :--- |
+| **`EI-01`** | **Brand Entity Name Discrepancy** | High | Detects conflicts between Organization JSON-LD name, page title, and primary headings. |
+| **`EI-02`** | **sameAs Link & Social Verification** | High / Medium | Validates `sameAs` entity profile URLs, detecting invalid URLs, 404 responses, or missing links. |
+| **`EI-03`** | **Cross-Page NAP Consistency** | High | Flags conflicting phone numbers or physical addresses between contact pages, footers, and schema. |
 
-## Outputs
-- Entity Consistency sub-score (0–100)
-- Identity conflict findings and missing `sameAs` canonical link list
-
-## Evidence Expectations
-- Extracted NAP text blocks
-- `sameAs` URL list extracts
-- Wikidata / Wikipedia lookup response logs
+## Code Entrypoint
+- Implementation module: [`src/analysis/entity_identity_audit.py`](../../src/analysis/entity_identity_audit.py)
+- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)

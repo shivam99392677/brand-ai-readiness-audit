@@ -1,31 +1,29 @@
 ---
-name: On-Site AI Engagement Audit
-description: Assesses on-site search readiness, conversational endpoint availability, llms.txt compliance, and interactive AI agent interoperability.
+name: engagement-audit
+description: Evaluates on-site human visitor orientation, above-the-fold clarity (Who/What/Next), navigation coverage, breadcrumbs, and actionable CTAs.
 ---
 
-# On-Site AI Engagement Audit Skill
+# On-Site Visitor Engagement Audit Skill
 
 ## Purpose
-Evaluates how effectively autonomous AI agents can interact with, search, and navigate a brand's website to perform tasks or retrieve machine-formatted developer/product metadata.
+Evaluates how clearly and effectively a website presents core orientation information to human visitors and AI agents navigating the user experience. Focuses on visitor clarity, navigation discoverability, page context hierarchy, and actionable next steps.
 
 ## When to Use
-Invoked by `audit-orchestrator` during the interactive agent readiness evaluation.
+Invoked by `audit-orchestrator` during the visitor engagement and orientation analysis phase.
 
-## High-Level Responsibilities
-- Check for `/llms.txt` and `/llms-full.txt` standard file presence and formatting.
-- Audit OpenAPI / REST endpoint discovery (`/openapi.json`, `/.well-known/ai-plugin.json`).
-- Evaluate search form accessibility, URL query parameter transparency, and response formatting.
-- Assess conversational assistant / chatbot interoperability.
+## Standard Check Matrix
 
-## Inputs
-- `domain_root_url` (string)
-- `discovered_api_specs` (array of OpenAPI schemas)
+| Check ID | Check Title | Severity | Description |
+| :--- | :--- | :--- | :--- |
+| **`EG-01`** | **Landing Orientation (Who/What/Next)** | High | Evaluates whether the landing screen immediately states who the brand is (H1), what it provides (subheading), and what the visitor should do next (actionable CTA). |
+| **`EG-02`** | **Navigation Coverage of Offerings** | Medium | Verifies that site navigation links route to key product and service offerings claimed in homepage headings. |
+| **`EG-03`** | **Interior Breadcrumb Hierarchy** | Medium | Checks deep interior pages (depth >= 2) for breadcrumb hierarchy or parent navigation context. |
+| **`EG-04`** | **Actionable Call-to-Action (CTA)** | Medium | Detects generic "Learn More" loops pointing back to the same page without real conversion actions. |
 
-## Outputs
-- AI Engagement sub-score (0–100)
-- Protocol compliance checklist (`llms.txt`, OpenAPI, search parameters)
+## Guardrails
+- Strictly evaluates human and agent visitor orientation.
+- **FORBIDDEN as core defects:** Missing `/llms.txt`, `/openapi.json`, or live chat widgets are never flagged as defects.
 
-## Evidence Expectations
-- `/llms.txt` GET response headers and body
-- OpenAPI endpoint probe logs
-- Search form DOM element attributes
+## Code Entrypoint
+- Implementation module: [`src/analysis/engagement_audit.py`](../../src/analysis/engagement_audit.py)
+- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)

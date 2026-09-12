@@ -1,30 +1,24 @@
 ---
-name: Fact Quality Audit
-description: Evaluates factual precision, claim verifiability, content clarity, and hallucination vulnerability across brand assets.
+name: fact-quality-audit
+description: Evaluates factual consistency across pages, numerical clarity and units, ungrounded marketing superlatives, and proposition precision.
 ---
 
 # Fact Quality Audit Skill
 
 ## Purpose
-Evaluates textual content across key brand pages to measure claim precision, semantic clarity, and vulnerability to AI hallucination or misinterpretation during retrieval-augmented generation (RAG).
+Evaluates textual content across brand pages to measure claim precision, semantic clarity, cross-page factual consistency (pricing, hours, refunds), and vulnerability to AI hallucination during retrieval-augmented generation (RAG).
 
 ## When to Use
-Invoked by `audit-orchestrator` during the semantic quality analysis phase.
+Invoked by `audit-orchestrator` during the factual quality analysis phase.
 
-## High-Level Responsibilities
-- Extract core factual propositions, numerical claims, pricing details, and policy assertions.
-- Flag ambiguous phrasing, marketing hyperbole lacking supporting data, or contradictory statements.
-- Evaluate clarity of technical specifications and feature descriptions.
-- Highlight content blocks prone to LLM hallucination during RAG extraction.
+## Standard Check Matrix
 
-## Inputs
-- `extracted_text_blocks` (array of text nodes mapped to DOM elements)
-- `brand_domain_context` (string description of core brand offerings)
+| Check ID | Check Title | Severity | Description |
+| :--- | :--- | :--- | :--- |
+| **`FQ-02`** | **Contradictory Proposition Claims** | High | Identifies conflicting pricing, refund policy windows, operating hours, or founding years across pages. |
+| **`FQ-03`** | **Unitless Numeric Metrics** | Medium | Identifies numerical metrics lacking explicit units, benchmarks, or baseline comparators. |
+| **`FQ-04`** | **Ungrounded Superlatives** | Medium | Flags marketing superlatives (`#1`, `best`, `only`, `leading`) lacking adjacent supporting citations or benchmark reports. |
 
-## Outputs
-- Fact quality sub-score (0–100)
-- Ambiguity and contradiction flag report with text snippet line numbers
-
-## Evidence Expectations
-- Extracted raw text blocks with source URL and DOM selector paths
-- Proposition extraction tables
+## Code Entrypoint
+- Implementation module: [`src/analysis/fact_quality_audit.py`](../../src/analysis/fact_quality_audit.py)
+- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)

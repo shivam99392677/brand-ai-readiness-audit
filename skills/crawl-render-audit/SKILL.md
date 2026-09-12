@@ -1,5 +1,5 @@
 ---
-name: Crawl & Render Audit
+name: crawl-render-audit
 description: Evaluates HTTP status, robots directives, DOM text extractability, heading hierarchy, link discoverability, site crawl coverage, and SSR/CSR parity.
 ---
 
@@ -32,5 +32,5 @@ Audits the technical accessibility, text extractability, content structure, and 
 | **`CR-012`** | **Site Crawl Coverage** | Discoverability | Low / Info | Audits total pages discovered vs crawled, page roles, and depth bounds. |
 
 ## Code Entrypoint
-- Implementation module: [`src/analysis/crawl_render_audit.py`](file:///d:/Adobe/brand-ai-readiness-audit/src/analysis/crawl_render_audit.py)
-- Unit tests: [`tests/test_crawl_render_audit.py`](file:///d:/Adobe/brand-ai-readiness-audit/tests/test_crawl_render_audit.py)
+- Implementation module: [`src/analysis/crawl_render_audit.py`](../../src/analysis/crawl_render_audit.py)
+- Unit tests: [`tests/test_crawl_render_audit.py`](../../tests/test_crawl_render_audit.py)

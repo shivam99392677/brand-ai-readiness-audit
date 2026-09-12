@@ -1,6 +1,6 @@
 ---
-name: Freshness & Corroboration
-description: Checks timestamp metadata, update cadence, external citation consistency, and cross-source corroboration.
+name: freshness-corroboration
+description: Checks timestamp metadata, update cadence, date consistency, staleness >12 months, and external corroboration via Wikidata, Wikipedia, and sameAs.
 ---
 
 # Freshness & Corroboration Skill
@@ -11,20 +11,14 @@ Assesses content freshness indicators and external corroboration signals to ensu
 ## When to Use
 Invoked by `audit-orchestrator` during recency and authority evaluation.
 
-## High-Level Responsibilities
-- Inspect explicit timestamp metadata (`dateModified`, `datePublished`, HTTP `Last-Modified`, sitemap `<lastmod>`).
-- Evaluate update cadence across core product pages, blogs, and documentation.
-- Verify cross-source corroboration by checking external citations and references.
+## Standard Check Matrix
 
-## Inputs
-- `page_metadata_records` (array of header and schema timestamps)
-- `external_reference_links` (array of outbound/inbound citation URLs)
+| Check ID | Check Title | Severity | Description |
+| :--- | :--- | :--- | :--- |
+| **`FC-01`** | **Date Inconsistency & Disagreement** | Medium | Flags conflicting dates between `dateModified`, `datePublished`, HTTP `Last-Modified`, and visible text. |
+| **`FC-02`** | **Content Staleness (>12 Months)** | High / Medium | Detects core pages with newest content date older than 12 months with no update signals (ignoring footer copyright). |
+| **`FC-03`** | **External Entity Corroboration** | High / Medium / Info | Corroborates brand entity against public knowledge sources (Wikidata, Wikipedia, official `sameAs` links). |
 
-## Outputs
-- Freshness & Corroboration score (0–100)
-- Recency decay report and un-corroborated claim flags
-
-## Evidence Expectations
-- Header timestamp dumps
-- JSON-LD date field extracts
-- Citation link mappings
+## Code Entrypoint
+- Implementation module: [`src/analysis/freshness_corroboration.py`](../../src/analysis/freshness_corroboration.py)
+- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)
