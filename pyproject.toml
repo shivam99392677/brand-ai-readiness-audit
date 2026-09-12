@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brand-ai-readiness-audit"
+version = "1.0.0"
+description = "Agent Skill Marketplace package for auditing brand websites across AI discoverability, factual content quality, entity consistency, structured data, crawl/render accessibility, and on-site visitor engagement."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Shivam", email = "shivam@example.com" }
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2.0.0",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12.0",
+    "pyyaml>=6.0.0",
+    "httpx>=0.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+]
+
+[project.scripts]
+brand-ai-audit = "src.orchestrator:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
