@@ -1,27 +1,32 @@
 ---
-name: Audit Orchestrator
-description: Master entrypoint skill for orchestrating end-to-end brand AI readiness audits across specialized sub-skills.
+name: audit-orchestrator
+description: Master entrypoint skill orchestrating end-to-end brand AI readiness audits across all 6 specialized analysis skills.
 ---
 
 # Audit Orchestrator Skill
 
 ## Purpose
-The **Audit Orchestrator** is the sole marketplace entrypoint skill for the Brand AI Readiness Audit package. It validates the target URL, coordinates the execution of registered audit sub-skills, aggregates evidence and findings, enforces error isolation, and synthesizes the overall readiness score.
+The **Audit Orchestrator** is the primary marketplace entrypoint skill for the Brand AI Readiness Audit package. It validates the target URL, conducts site-wide discovery and crawling, executes the canonical evidence extraction layer, coordinates the execution of all 6 registered audit sub-skills, merges findings, enforces error isolation, and synthesizes the canonical Adobe Report JSON.
 
-## When to Use
-Invoked as the primary CLI or API entrypoint when initiating an AI readiness audit for a web URL.
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP requests, parse HTML, file read/write (for output reports only), no destructive network writes or state mutations.
+- **Code Entrypoint:** `src/orchestrator.py`
+- **Output:** Canonical Adobe `report.json` with severity summary and sorted `findings[]`.
 
 ## Execution Workflow
-1. **URL Validation:** Validates that the provided target URL contains a valid HTTP/HTTPS scheme and domain host.
-2. **Sub-Skill Delegation:** Dispatches audit execution to registered specialized sub-skills (`crawl-render-audit`, `structured-data-audit`).
-3. **Error Isolation:** Encapsulates skill-level exceptions, generating error findings for failed skills without crashing the orchestrator pipeline.
-4. **Aggregation & Scoring:** Aggregates findings from all executed sub-skills and computes a deterministic summary score.
-5. **Output Generation:** Returns a unified `AuditReport` JSON structure.
-
-## Registered Sub-Skills (Day 3 Scope)
-- `crawl-render-audit`: Evaluates HTTP status, robots metadata directives, and pre-rendered DOM availability.
-- `structured-data-audit`: Audits JSON-LD presence, syntax validity, schema types, entity completeness, and visible content consistency.
+1. **Target Validation & Bounded Crawl:** Validates that the provided target URL has a valid scheme and hostname, and discovers pages within configurable depth/page limits.
+2. **Canonical Evidence Extraction:** Coordinates modular extractors to produce a normalized, traceable `ExtractionResult` with sequential `EV-00001` IDs.
+3. **Sub-Skill Delegation:** Dispatches the full evidence store to all 6 registered analysis skills:
+   - `crawl-render-audit`: Evaluates HTTP headers, robots directives, DOM text extractability, and SSR/CSR parity.
+   - `structured-data-audit`: Audits Schema.org JSON-LD syntax, entity types, completeness on product pages, and visible content consistency.
+   - `fact-quality-audit`: Detects cross-page contradictions (pricing, hours, refunds), unitless numbers, and ungrounded superlatives.
+   - `freshness-corroboration`: Evaluates timestamp consistency, content staleness >12 months (ignoring copyright), and public source corroboration (Wikidata, Wikipedia, sameAs).
+   - `entity-identity-audit`: Audits brand entity naming consistency between title/H1 and schema, sameAs links (404 detection), and cross-page NAP consistency.
+   - `engagement-audit`: Evaluates above-the-fold orientation (Who/What/Next), navigation coverage of offerings, interior breadcrumb hierarchy, and actionable CTAs.
+4. **Error Isolation:** Encapsulates sub-skill exceptions, guaranteeing the audit finishes and returns valid findings.
+5. **Adobe Report Synthesis:** Uses `AdobeReportComposer` to filter out non-defects, sort by severity, and output canonical Adobe `report.json`.
 
 ## Code Entrypoint
-- Implementation module: [`src/orchestrator.py`](file:///d:/Adobe/brand-ai-readiness-audit/src/orchestrator.py)
-- Unit tests: [`tests/test_orchestrator.py`](file:///d:/Adobe/brand-ai-readiness-audit/tests/test_orchestrator.py)
+- Implementation module: `src/orchestrator.py`
+- CLI Usage: `python -m src.orchestrator https://example.com -o report.json`
+- Unit tests: `tests/test_orchestrator.py`

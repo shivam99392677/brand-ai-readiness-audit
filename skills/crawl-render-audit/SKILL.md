@@ -1,5 +1,5 @@
 ---
-name: Crawl & Render Audit
+name: crawl-render-audit
 description: Evaluates HTTP status, robots directives, DOM text extractability, heading hierarchy, link discoverability, site crawl coverage, and SSR/CSR parity.
 ---
 
@@ -7,6 +7,11 @@ description: Evaluates HTTP status, robots directives, DOM text extractability, 
 
 ## Purpose
 Audits the technical accessibility, text extractability, content structure, and discoverability of web pages for automated AI systems and web crawlers.
+
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP, parse HTML, no writes.
+- **Code Entrypoint:** `src/analysis/crawl_render_audit.py`
+- **Output:** `List[Finding]` consumed by composer.
 
 ## Key Dimension Classifications
 1. **Technical Accessibility**: Evaluates HTTP response codes (`CR-001`), robots headers (`CR-002`), and pre-render payload availability (`CR-003`).
@@ -31,6 +36,6 @@ Audits the technical accessibility, text extractability, content structure, and 
 | **`CR-011`** | **Raw vs Rendered Text Discrepancy** | Extractability | Medium / Info / N/A | Compares raw pre-rendered text length vs rendered DOM text length. |
 | **`CR-012`** | **Site Crawl Coverage** | Discoverability | Low / Info | Audits total pages discovered vs crawled, page roles, and depth bounds. |
 
-## Code Entrypoint
-- Implementation module: [`src/analysis/crawl_render_audit.py`](file:///d:/Adobe/brand-ai-readiness-audit/src/analysis/crawl_render_audit.py)
-- Unit tests: [`tests/test_crawl_render_audit.py`](file:///d:/Adobe/brand-ai-readiness-audit/tests/test_crawl_render_audit.py)
+## Code Entrypoint & Tests
+- Implementation module: `src/analysis/crawl_render_audit.py`
+- Unit tests: `tests/test_crawl_render_audit.py`

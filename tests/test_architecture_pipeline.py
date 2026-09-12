@@ -67,9 +67,13 @@ def test_single_crawl_shared_evidence_flow():
     # Verify single crawl fetch executed once per discovered URL
     assert fetch_counts["count"] == 2
     assert report.url == "https://showcase.example.com/"
-    assert len(report.skills_run) == 2
+    assert len(report.skills_run) == 6
     assert "crawl-render-audit" in report.skills_run
     assert "structured-data-audit" in report.skills_run
+    assert "fact-quality-audit" in report.skills_run
+    assert "freshness-corroboration" in report.skills_run
+    assert "entity-identity-audit" in report.skills_run
+    assert "engagement-audit" in report.skills_run
 
     # Verify shared evidence store structure
     assert report.crawl is not None

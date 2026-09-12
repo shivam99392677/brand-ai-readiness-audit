@@ -1,60 +1,15 @@
 {
-  "$schema": "https://json.schemastore.org/package.json",
   "name": "brand-ai-readiness-audit",
-  "version": "0.1.0",
-  "description": "Agent Skill Marketplace package for auditing brand websites across AI discoverability, fact quality, freshness, entity identity, structured data, crawl/render accessibility, and on-site AI engagement.",
-  "author": "Shivam",
+  "version": "1.0.0",
+  "description": "Audits a brand website for AI discoverability (off-site Reach/Read/Extract/Trust) and on-site visitor engagement (who/what/next, nav, breadcrumbs, CTAs). URL-only input. Recommend-only.",
   "license": "MIT",
-  "entrypoint": "skills/audit-orchestrator/SKILL.md",
   "skills": [
-    {
-      "id": "audit-orchestrator",
-      "name": "Audit Orchestrator Skill",
-      "path": "skills/audit-orchestrator/SKILL.md",
-      "isEntrypoint": true,
-      "description": "Master orchestrator skill coordinating end-to-end brand AI readiness audits by invoking specialized audit skills."
-    },
-    {
-      "id": "crawl-render-audit",
-      "name": "Crawl & Render Audit Skill",
-      "path": "skills/crawl-render-audit/SKILL.md",
-      "isEntrypoint": false,
-      "description": "Audits website robots.txt, sitemaps, HTTP headers, DOM rendering, and crawler accessibility for AI user agents."
-    },
-    {
-      "id": "structured-data-audit",
-      "name": "Structured Data Audit Skill",
-      "path": "skills/structured-data-audit/SKILL.md",
-      "isEntrypoint": false,
-      "description": "Validates Schema.org JSON-LD, Microdata, OpenGraph, and semantic markup for AI entity extraction."
-    },
-    {
-      "id": "fact-quality-audit",
-      "name": "Fact Quality Audit Skill",
-      "path": "skills/fact-quality-audit/SKILL.md",
-      "isEntrypoint": false,
-      "description": "Evaluates factual precision, claim verifiability, content clarity, and hallucination vulnerability across brand assets."
-    },
-    {
-      "id": "freshness-corroboration",
-      "name": "Freshness & Corroboration Skill",
-      "path": "skills/freshness-corroboration/SKILL.md",
-      "isEntrypoint": false,
-      "description": "Checks timestamp metadata, update cadence, external citation consistency, and cross-source corroboration."
-    },
-    {
-      "id": "entity-identity-audit",
-      "name": "Entity Identity & Consistency Skill",
-      "path": "skills/entity-identity-audit/SKILL.md",
-      "isEntrypoint": false,
-      "description": "Audits brand entity attributes, NAP (Name, Address, Phone) consistency, Knowledge Graph alignment, and canonical branding."
-    },
-    {
-      "id": "engagement-audit",
-      "name": "On-Site AI Engagement Audit Skill",
-      "path": "skills/engagement-audit/SKILL.md",
-      "isEntrypoint": false,
-      "description": "Assesses on-site search readiness, conversational endpoint availability, and interactive AI agent interoperability."
-    }
+    { "name": "audit-orchestrator",      "path": "./skills/audit-orchestrator",      "entrypoint": true },
+    { "name": "crawl-render-audit",      "path": "./skills/crawl-render-audit" },
+    { "name": "structured-data-audit",   "path": "./skills/structured-data-audit" },
+    { "name": "fact-quality-audit",      "path": "./skills/fact-quality-audit" },
+    { "name": "freshness-corroboration", "path": "./skills/freshness-corroboration" },
+    { "name": "entity-identity-audit",   "path": "./skills/entity-identity-audit" },
+    { "name": "engagement-audit",        "path": "./skills/engagement-audit" }
   ]
 }

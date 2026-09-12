@@ -857,3 +857,50 @@ def audit_crawl_render_skill(
         ))
 
     return findings
+
+
+def run_crawl_render_audit(
+    evidence: Any,
+    website: Optional[Any] = None,
+    url: Optional[str] = None,
+    html_content: Optional[str] = None,
+    headers: Optional[Dict[str, str]] = None,
+    status_code: Optional[int] = None,
+    crawl_manifest: Optional[Any] = None,
+    **kwargs,
+) -> List[Finding]:
+    """Canonical entrypoint for crawl and render accessibility audit skill."""
+    target_url = url or (getattr(website, "start_url", None) if website else None) or "https://example.com"
+    
+    # 1. Direct parameter fallback
+    if html_content is not None or headers is not None:
+        return audit_crawl_render_skill(
+            url=target_url,
+            html_content=html_content or "",
+            headers=headers or {},
+            status_code=status_code or 200,
+            crawl_manifest=crawl_manifest,
+        )
+
+    # 2. Extract homepage or primary page from WebsiteEvidence
+    p_html = ""
+    p_headers = {}
+    p_status = 200
+    if website is not None and hasattr(website, "pages") and website.pages:
+        primary_page = next((p for p in website.pages if getattr(p, "url", "") == target_url or getattr(p, "depth", 0) == 0), website.pages[0])
+        p_html = getattr(primary_page, "html_content", "") or ""
+        p_headers = getattr(primary_page, "headers", {}) or {}
+        p_status = getattr(primary_page, "status_code", 200) or 200
+    elif hasattr(evidence, "evidence"):
+        raw_ev = next((e for e in evidence.evidence if e.type == "raw_html"), None)
+        if raw_ev:
+            p_html = raw_ev.data.get("html_content", "")
+
+    return audit_crawl_render_skill(
+        url=target_url,
+        html_content=p_html,
+        headers=p_headers,
+        status_code=p_status,
+        crawl_manifest=crawl_manifest,
+    )
+

@@ -13,6 +13,8 @@ class FindingStatus(str, Enum):
     WARNING = "warning"
     NOT_APPLICABLE = "not_applicable"
     ERROR = "error"
+    INFO = PASS
+
 
 
 class FindingSeverity(str, Enum):

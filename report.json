@@ -1,0 +1,88 @@
+{
+  "site": "example.com",
+  "audited_at": "2026-09-12T17:00:26Z",
+  "summary": {
+    "total_findings": 5,
+    "critical": 0,
+    "high": 0,
+    "medium": 2,
+    "low": 3
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "Missing External Entity Corroboration Links",
+      "severity": "medium",
+      "evidence": "No external sameAs profiles or Wikidata Knowledge Graph references were detected on the domain to corroborate brand identity.",
+      "suggested_action": {
+        "summary": "Add sameAs URLs to Organization schema linking to authoritative profiles (Wikidata, Wikipedia, Crunchbase, verified social profiles) for cross-platform corroboration.",
+        "priority": "medium"
+      },
+      "check_id": "FC-03",
+      "category": "freshness-corroboration",
+      "affected_urls": [
+        "https://example.com/"
+      ]
+    },
+    {
+      "id": "F-002",
+      "title": "Missing Canonical sameAs Social Profiles",
+      "severity": "medium",
+      "evidence": "No sameAs entity reference links were discovered in Organization schema or structured markup.",
+      "suggested_action": {
+        "summary": "Add sameAs URLs to Organization schema linking to official social profiles and Knowledge Graph entities.",
+        "priority": "medium"
+      },
+      "check_id": "EI-02",
+      "category": "entity-identity-audit",
+      "affected_urls": [
+        "https://example.com/"
+      ]
+    },
+    {
+      "id": "F-003",
+      "title": "Meta Description Presence",
+      "severity": "low",
+      "evidence": "Page is missing a meta description tag. Observed: [<head> > <meta name='description'>] description: None, length: 0",
+      "suggested_action": {
+        "summary": "Add a concise meta description summarizing the page content.",
+        "priority": "low"
+      },
+      "check_id": "CR-006",
+      "category": "crawl-render-audit",
+      "affected_urls": [
+        "https://example.com/"
+      ]
+    },
+    {
+      "id": "F-004",
+      "title": "Discoverable Internal Links",
+      "severity": "low",
+      "evidence": "No discoverable internal links were found in the HTML anchors.",
+      "suggested_action": {
+        "summary": "Expose internal site pages via standard HTML anchor links.",
+        "priority": "low"
+      },
+      "check_id": "CR-008",
+      "category": "crawl-render-audit",
+      "affected_urls": [
+        "https://example.com/"
+      ]
+    },
+    {
+      "id": "F-005",
+      "title": "Canonical URL Declaration",
+      "severity": "low",
+      "evidence": "No canonical URL link tag (<link rel='canonical'>) was declared.",
+      "suggested_action": {
+        "summary": "Add a self-referential canonical URL tag.",
+        "priority": "low"
+      },
+      "check_id": "CR-009",
+      "category": "crawl-render-audit",
+      "affected_urls": [
+        "https://example.com/"
+      ]
+    }
+  ]
+}
