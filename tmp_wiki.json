@@ -1,0 +1,103 @@
+{
+  "site": "www.wikipedia.org",
+  "audited_at": "2026-09-12T17:49:29Z",
+  "summary": {
+    "total_findings": 6,
+    "critical": 0,
+    "high": 0,
+    "medium": 4,
+    "low": 2
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "Page Title Presence & Quality",
+      "severity": "medium",
+      "evidence": "Page is missing a <title> tag. Observed: [<head> > <title>] title: None, length: 0",
+      "suggested_action": {
+        "summary": "Add a descriptive <title> tag to the HTML head.",
+        "priority": "medium"
+      },
+      "check_id": "CR-005",
+      "category": "crawl-render-audit",
+      "affected_urls": [
+        "https://www.wikipedia.org/"
+      ]
+    },
+    {
+      "id": "F-002",
+      "title": "Missing External Entity Corroboration Links",
+      "severity": "medium",
+      "evidence": "No external sameAs profiles or Wikidata Knowledge Graph references were detected on the domain to corroborate brand identity.",
+      "suggested_action": {
+        "summary": "Add sameAs URLs to Organization schema linking to authoritative profiles (Wikidata, Wikipedia, Crunchbase, verified social profiles) for cross-platform corroboration.",
+        "priority": "medium"
+      },
+      "check_id": "FC-03",
+      "category": "freshness-corroboration",
+      "affected_urls": [
+        "https://www.wikipedia.org/"
+      ]
+    },
+    {
+      "id": "F-003",
+      "title": "Missing Canonical sameAs Social Profiles",
+      "severity": "medium",
+      "evidence": "No sameAs entity reference links were discovered in Organization schema or structured markup.",
+      "suggested_action": {
+        "summary": "Add sameAs URLs to Organization schema linking to official social profiles and Knowledge Graph entities.",
+        "priority": "medium"
+      },
+      "check_id": "EI-02",
+      "category": "entity-identity-audit",
+      "affected_urls": [
+        "https://www.wikipedia.org/"
+      ]
+    },
+    {
+      "id": "F-004",
+      "title": "Site Navigation Does Not Cover Core Offerings",
+      "severity": "medium",
+      "evidence": "Primary navigation does not clearly route to core service/product offerings declared in homepage headings: 1,000,000+\n\n\narticles, 100,000+\n\n\narticles, 10,000+\n\n\narticles.",
+      "suggested_action": {
+        "summary": "Align top-level navigation labels with key product and service offerings declared in landing headings.",
+        "priority": "medium"
+      },
+      "check_id": "EG-02",
+      "category": "engagement-audit",
+      "affected_urls": [
+        "https://www.wikipedia.org/"
+      ]
+    },
+    {
+      "id": "F-005",
+      "title": "Discoverable Internal Links",
+      "severity": "low",
+      "evidence": "No discoverable internal links were found in the HTML anchors.",
+      "suggested_action": {
+        "summary": "Expose internal site pages via standard HTML anchor links.",
+        "priority": "low"
+      },
+      "check_id": "CR-008",
+      "category": "crawl-render-audit",
+      "affected_urls": [
+        "https://www.wikipedia.org/"
+      ]
+    },
+    {
+      "id": "F-006",
+      "title": "Canonical URL Declaration",
+      "severity": "low",
+      "evidence": "No canonical URL link tag (<link rel='canonical'>) was declared.",
+      "suggested_action": {
+        "summary": "Add a self-referential canonical URL tag.",
+        "priority": "low"
+      },
+      "check_id": "CR-009",
+      "category": "crawl-render-audit",
+      "affected_urls": [
+        "https://www.wikipedia.org/"
+      ]
+    }
+  ]
+}

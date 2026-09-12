@@ -11,6 +11,8 @@ from src.analysis.entity_identity_audit import run_entity_identity_audit
 from src.analysis.fact_quality_audit import run_fact_quality_audit
 from src.analysis.freshness_corroboration import run_freshness_corroboration
 from src.analysis.structured_data_audit import run_structured_data_audit
+from src.analysis.sitemap_audit import run_sitemap_audit
+from src.analysis.bot_block_audit import run_bot_block_audit
 from src.crawler.engine import CrawlConfig, CrawlManifest, SiteCrawler
 from src.extraction.extraction_manager import ExtractionManager
 from src.models import (
@@ -35,13 +37,15 @@ def validate_target_url(url: str) -> str:
     return cleaned
 
 
-DEFAULT_SKILL_REGISTRY: Dict[str, Callable[..., List[Finding]]] = {
+
     "crawl-render-audit": run_crawl_render_audit,
     "structured-data-audit": run_structured_data_audit,
     "fact-quality-audit": run_fact_quality_audit,
     "freshness-corroboration": run_freshness_corroboration,
     "entity-identity-audit": run_entity_identity_audit,
     "engagement-audit": run_engagement_audit,
+    "sitemap-audit": run_sitemap_audit,
+    "bot-block-audit": run_bot_block_audit,
 }
 
 
