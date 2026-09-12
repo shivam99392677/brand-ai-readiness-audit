@@ -38,15 +38,24 @@ def validate_target_url(url: str) -> str:
 
 
 
+# Core skills (original six) that are always run by default
+CORE_SKILL_REGISTRY: Dict[str, Callable[..., List[Finding]]] = {
     "crawl-render-audit": run_crawl_render_audit,
     "structured-data-audit": run_structured_data_audit,
     "fact-quality-audit": run_fact_quality_audit,
     "freshness-corroboration": run_freshness_corroboration,
     "entity-identity-audit": run_entity_identity_audit,
     "engagement-audit": run_engagement_audit,
+}
+
+# Extended skills (optional)
+EXTENDED_SKILL_REGISTRY: Dict[str, Callable[..., List[Finding]]] = {
     "sitemap-audit": run_sitemap_audit,
     "bot-block-audit": run_bot_block_audit,
 }
+
+# Default registry used when no custom registry is provided
+DEFAULT_SKILL_REGISTRY = CORE_SKILL_REGISTRY.copy()
 
 
 class AuditOrchestrator:
@@ -56,8 +65,19 @@ class AuditOrchestrator:
         self,
         skill_registry: Optional[Dict[str, Callable[..., List[Finding]]]] = None,
         crawl_config: Optional[CrawlConfig] = None,
+        enable_extended_skills: bool = False,
     ):
-        self.skill_registry = skill_registry if skill_registry is not None else DEFAULT_SKILL_REGISTRY
+        # Determine which registry to use
+        if skill_registry is not None:
+            self.skill_registry = skill_registry
+        else:
+            if enable_extended_skills:
+                # Merge core and extended skills
+                merged = CORE_SKILL_REGISTRY.copy()
+                merged.update(EXTENDED_SKILL_REGISTRY)
+                self.skill_registry = merged
+            else:
+                self.skill_registry = CORE_SKILL_REGISTRY.copy()
         self.crawl_config = crawl_config or CrawlConfig()
         self.crawler = SiteCrawler(config=self.crawl_config)
         self.extraction_manager = ExtractionManager()
