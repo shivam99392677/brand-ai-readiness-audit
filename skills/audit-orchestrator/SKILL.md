@@ -8,8 +8,10 @@ description: Master entrypoint skill orchestrating end-to-end brand AI readiness
 ## Purpose
 The **Audit Orchestrator** is the primary marketplace entrypoint skill for the Brand AI Readiness Audit package. It validates the target URL, conducts site-wide discovery and crawling, executes the canonical evidence extraction layer, coordinates the execution of all 6 registered audit sub-skills, merges findings, enforces error isolation, and synthesizes the canonical Adobe Report JSON.
 
-## When to Use
-Invoked as the primary CLI, API, or marketplace entrypoint when initiating a comprehensive AI readiness audit for a web domain.
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP requests, parse HTML, file read/write (for output reports only), no destructive network writes or state mutations.
+- **Code Entrypoint:** `src/orchestrator.py`
+- **Output:** Canonical Adobe `report.json` with severity summary and sorted `findings[]`.
 
 ## Execution Workflow
 1. **Target Validation & Bounded Crawl:** Validates that the provided target URL has a valid scheme and hostname, and discovers pages within configurable depth/page limits.
@@ -25,6 +27,6 @@ Invoked as the primary CLI, API, or marketplace entrypoint when initiating a com
 5. **Adobe Report Synthesis:** Uses `AdobeReportComposer` to filter out non-defects, sort by severity, and output canonical Adobe `report.json`.
 
 ## Code Entrypoint
-- Implementation module: [`src/orchestrator.py`](../../src/orchestrator.py)
+- Implementation module: `src/orchestrator.py`
 - CLI Usage: `python -m src.orchestrator https://example.com -o report.json`
-- Unit tests: [`tests/test_orchestrator.py`](../../tests/test_orchestrator.py)
+- Unit tests: `tests/test_orchestrator.py`

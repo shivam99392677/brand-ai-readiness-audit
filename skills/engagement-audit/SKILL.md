@@ -8,6 +8,11 @@ description: Evaluates on-site human visitor orientation, above-the-fold clarity
 ## Purpose
 Evaluates how clearly and effectively a website presents core orientation information to human visitors and AI agents navigating the user experience. Focuses on visitor clarity, navigation discoverability, page context hierarchy, and actionable next steps.
 
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP, parse HTML, no writes.
+- **Code Entrypoint:** `src/analysis/engagement_audit.py`
+- **Output:** `List[Finding]` consumed by composer.
+
 ## When to Use
 Invoked by `audit-orchestrator` during the visitor engagement and orientation analysis phase.
 
@@ -23,7 +28,8 @@ Invoked by `audit-orchestrator` during the visitor engagement and orientation an
 ## Guardrails
 - Strictly evaluates human and agent visitor orientation.
 - **FORBIDDEN as core defects:** Missing `/llms.txt`, `/openapi.json`, or live chat widgets are never flagged as defects.
+- **JS-Shell Protection:** Pages with low visible word count (<80 words) or pre-render JS shells are not penalized under `EG-01` so `crawl-render-audit` (`CR-010`) owns rendering issues without double-counting.
 
-## Code Entrypoint
-- Implementation module: [`src/analysis/engagement_audit.py`](../../src/analysis/engagement_audit.py)
-- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)
+## Code Entrypoint & Tests
+- Implementation module: `src/analysis/engagement_audit.py`
+- Unit tests: `tests/test_analysis_skills.py`

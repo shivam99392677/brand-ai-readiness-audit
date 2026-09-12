@@ -8,6 +8,11 @@ description: Evaluates factual consistency across pages, numerical clarity and u
 ## Purpose
 Evaluates textual content across brand pages to measure claim precision, semantic clarity, cross-page factual consistency (pricing, hours, refunds), and vulnerability to AI hallucination during retrieval-augmented generation (RAG).
 
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP, parse HTML, no writes.
+- **Code Entrypoint:** `src/analysis/fact_quality_audit.py`
+- **Output:** `List[Finding]` consumed by composer.
+
 ## When to Use
 Invoked by `audit-orchestrator` during the factual quality analysis phase.
 
@@ -19,6 +24,6 @@ Invoked by `audit-orchestrator` during the factual quality analysis phase.
 | **`FQ-03`** | **Unitless Numeric Metrics** | Medium | Identifies numerical metrics lacking explicit units, benchmarks, or baseline comparators. |
 | **`FQ-04`** | **Ungrounded Superlatives** | Medium | Flags marketing superlatives (`#1`, `best`, `only`, `leading`) lacking adjacent supporting citations or benchmark reports. |
 
-## Code Entrypoint
-- Implementation module: [`src/analysis/fact_quality_audit.py`](../../src/analysis/fact_quality_audit.py)
-- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)
+## Code Entrypoint & Tests
+- Implementation module: `src/analysis/fact_quality_audit.py`
+- Unit tests: `tests/test_analysis_skills.py`

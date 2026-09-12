@@ -362,9 +362,19 @@ class StructuredDataAuditor:
         complete_entities = []
 
         for ent in extracted_entities:
-            # Check for core missing attributes (e.g. Organization missing name)
+            # Check for core missing attributes (e.g. Organization missing name) and for Product ensure price present
             has_name_or_url = bool(ent.get("name") or ent.get("url"))
-            if not has_name_or_url:
+            is_product = "Product" in ent.get("matched_types", [])
+            has_price = False
+            # Check offers dict for price
+            offers = ent.get("offers")
+            if isinstance(offers, dict):
+                has_price = bool(offers.get("price"))
+            # Fallback to direct price field
+            if not has_price:
+                has_price = bool(ent.get("price"))
+            is_complete = has_name_or_url and (not is_product or has_price)
+            if not is_complete:
                 incomplete_entities.append(ent)
             else:
                 complete_entities.append(ent)

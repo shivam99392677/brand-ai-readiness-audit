@@ -67,9 +67,14 @@ class AdobeReport(BaseModel):
 
 
 class AdobeReportComposer:
+    @classmethod
+    def compose(cls, target_url: str, findings: List[Finding], timestamp: Optional[str] = None, include_suggestions: bool = True) -> Dict[str, Any]:
+        """Convenient wrapper so callers can use AdobeReportComposer.compose(url, findings)."""
+        return cls()._compose(target_url, findings, timestamp=timestamp, include_suggestions=include_suggestions)
+
     """Composes, filters, deduplicates, and formats internal findings into the Adobe Report format."""
 
-    def compose(
+    def _compose(
         self,
         target_url: str,
         findings: List[Finding],
@@ -185,7 +190,7 @@ def compose_adobe_report(
 ) -> Dict[str, Any]:
     """Helper function to compose Adobe report JSON."""
     composer = AdobeReportComposer()
-    return composer.compose(target_url=target_url, findings=findings, timestamp=timestamp)
+    return composer._compose(target_url=target_url, findings=findings, timestamp=timestamp)
 
 
 def save_adobe_report(report_dict: Dict[str, Any], filepath: str = "report.json") -> None:

@@ -1,14 +1,15 @@
 {
   "name": "brand-ai-readiness-audit",
   "version": "1.0.0",
-  "description": "Audits a brand website for AI discoverability (off-site) and on-site visitor engagement.",
+  "description": "Audits a brand website for AI discoverability (off-site Reach/Read/Extract/Trust) and on-site visitor engagement (who/what/next, nav, breadcrumbs, CTAs). URL-only input. Recommend-only.",
+  "license": "MIT",
   "skills": [
-    { "name": "audit-orchestrator",     "path": "./skills/audit-orchestrator",     "entrypoint": true },
-    { "name": "crawl-render-audit",     "path": "./skills/crawl-render-audit" },
-    { "name": "structured-data-audit",  "path": "./skills/structured-data-audit" },
-    { "name": "fact-quality-audit",     "path": "./skills/fact-quality-audit" },
-    { "name": "freshness-corroboration","path": "./skills/freshness-corroboration" },
-    { "name": "entity-identity-audit",  "path": "./skills/entity-identity-audit" },
-    { "name": "engagement-audit",       "path": "./skills/engagement-audit" }
+    { "name": "audit-orchestrator",      "path": "./skills/audit-orchestrator",      "entrypoint": true },
+    { "name": "crawl-render-audit",      "path": "./skills/crawl-render-audit" },
+    { "name": "structured-data-audit",   "path": "./skills/structured-data-audit" },
+    { "name": "fact-quality-audit",      "path": "./skills/fact-quality-audit" },
+    { "name": "freshness-corroboration", "path": "./skills/freshness-corroboration" },
+    { "name": "entity-identity-audit",   "path": "./skills/entity-identity-audit" },
+    { "name": "engagement-audit",        "path": "./skills/engagement-audit" }
   ]
 }

@@ -8,6 +8,11 @@ description: Evaluates HTTP status, robots directives, DOM text extractability, 
 ## Purpose
 Audits the technical accessibility, text extractability, content structure, and discoverability of web pages for automated AI systems and web crawlers.
 
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP, parse HTML, no writes.
+- **Code Entrypoint:** `src/analysis/crawl_render_audit.py`
+- **Output:** `List[Finding]` consumed by composer.
+
 ## Key Dimension Classifications
 1. **Technical Accessibility**: Evaluates HTTP response codes (`CR-001`), robots headers (`CR-002`), and pre-render payload availability (`CR-003`).
 2. **Text Extractability**: Evaluates text whitespace/word-boundary integrity (`CR-004`) and raw vs rendered text length parity (`CR-011`).
@@ -31,6 +36,6 @@ Audits the technical accessibility, text extractability, content structure, and 
 | **`CR-011`** | **Raw vs Rendered Text Discrepancy** | Extractability | Medium / Info / N/A | Compares raw pre-rendered text length vs rendered DOM text length. |
 | **`CR-012`** | **Site Crawl Coverage** | Discoverability | Low / Info | Audits total pages discovered vs crawled, page roles, and depth bounds. |
 
-## Code Entrypoint
-- Implementation module: [`src/analysis/crawl_render_audit.py`](../../src/analysis/crawl_render_audit.py)
-- Unit tests: [`tests/test_crawl_render_audit.py`](../../tests/test_crawl_render_audit.py)
+## Code Entrypoint & Tests
+- Implementation module: `src/analysis/crawl_render_audit.py`
+- Unit tests: `tests/test_crawl_render_audit.py`

@@ -8,6 +8,11 @@ description: Validates Schema.org JSON-LD syntax, entity types, completeness on 
 ## Purpose
 Inspects web page HTML to audit structured data markup (JSON-LD script blocks, Microdata, and relevant meta tags) and reports observable technical findings without treating general missing schema as defects.
 
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP, parse HTML, no writes.
+- **Code Entrypoint:** `src/analysis/structured_data_audit.py`
+- **Output:** `List[Finding]` consumed by composer.
+
 ## When to Use
 Invoked by `audit-orchestrator` during the semantic structured data analysis phase.
 
@@ -26,6 +31,6 @@ Invoked by `audit-orchestrator` during the semantic structured data analysis pha
 - **Defects on Real Issues Only:** Only flags syntax errors or incomplete Product/Offer schemas on pages that are classified as product pages. Missing schema on general pages is informational.
 - **Traceable Evidence:** Every finding includes precise evidence pointers (`location`, `source_url`, `evidence_type`, `observed`, `expected`).
 
-## Code Entrypoint
-- Implementation module: [`src/analysis/structured_data_audit.py`](../../src/analysis/structured_data_audit.py)
-- Unit tests: [`tests/test_structured_data_audit.py`](../../tests/test_structured_data_audit.py)
+## Code Entrypoint & Tests
+- Implementation module: `src/analysis/structured_data_audit.py`
+- Unit tests: `tests/test_structured_data_audit.py`

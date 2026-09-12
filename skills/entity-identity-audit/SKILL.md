@@ -8,6 +8,11 @@ description: Audits brand entity naming consistency between title/H1 and schema,
 ## Purpose
 Audits brand identity signals to ensure AI Knowledge Graphs and search engines can construct a unified, canonical entity model for the brand without entity fragmentation.
 
+## Operational Constraints & Capabilities
+- **Allowed Tools:** GET HTTP (with strict timeouts), parse HTML, no writes.
+- **Code Entrypoint:** `src/analysis/entity_identity_audit.py`
+- **Output:** `List[Finding]` consumed by composer.
+
 ## When to Use
 Invoked by `audit-orchestrator` during entity validation.
 
@@ -19,6 +24,6 @@ Invoked by `audit-orchestrator` during entity validation.
 | **`EI-02`** | **sameAs Link & Social Verification** | High / Medium | Validates `sameAs` entity profile URLs, detecting invalid URLs, 404 responses, or missing links. |
 | **`EI-03`** | **Cross-Page NAP Consistency** | High | Flags conflicting phone numbers or physical addresses between contact pages, footers, and schema. |
 
-## Code Entrypoint
-- Implementation module: [`src/analysis/entity_identity_audit.py`](../../src/analysis/entity_identity_audit.py)
-- Unit tests: [`tests/test_analysis_skills.py`](../../tests/test_analysis_skills.py)
+## Code Entrypoint & Tests
+- Implementation module: `src/analysis/entity_identity_audit.py`
+- Unit tests: `tests/test_analysis_skills.py`
