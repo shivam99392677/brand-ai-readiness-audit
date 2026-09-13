@@ -1,41 +1,60 @@
 ---
 name: crawl-render-audit
-description: Evaluates HTTP status, robots directives, DOM text extractability, heading hierarchy, link discoverability, site crawl coverage, and SSR/CSR parity.
+description: >
+  Audits whether a website's pages are reachable and readable by AI crawlers:
+  HTTP status, robots.txt / X-Robots-Tag directives, text extractability,
+  heading structure, internal links, and SSR/CSR parity. Use when the
+  entrypoint report flags "pages are empty JS shells", "robots.txt blocks AI
+  bots", or "text not extractable". Do NOT start here.
+license: MIT
+allowed-tools: GET HTTP, parse HTML, read files, run bundled Python scripts
 ---
 
-# Crawl & Render Audit Skill
+## When to use
+This skill evaluates technical accessibility and text extractability of web
+pages for AI crawlers. Trigger phrases: "crawl audit", "robots.txt check",
+"JS shell audit", "text extractability", "SSR CSR parity".
 
-## Purpose
-Audits the technical accessibility, text extractability, content structure, and discoverability of web pages for automated AI systems and web crawlers.
+**Do not start here.** This is a specialist skill invoked automatically by the
+entrypoint (audit-orchestrator). If you are auditing a site, start with the
+entrypoint skill. Only invoke this skill directly if:
+- You already have a report.json or crawl manifest from the entrypoint, AND
+- You need to re-run or inspect only the crawl/render findings.
 
-## Operational Constraints & Capabilities
-- **Allowed Tools:** GET HTTP, parse HTML, no writes.
-- **Code Entrypoint:** `src/analysis/crawl_render_audit.py`
-- **Output:** `List[Finding]` consumed by composer.
+## Inputs
+- A crawl manifest (JSON) from the entrypoint, OR
+- A report.json file (extract the crawl field)
 
-## Key Dimension Classifications
-1. **Technical Accessibility**: Evaluates HTTP response codes (`CR-001`), robots headers (`CR-002`), and pre-render payload availability (`CR-003`).
-2. **Text Extractability**: Evaluates text whitespace/word-boundary integrity (`CR-004`) and raw vs rendered text length parity (`CR-011`).
-3. **Content Structure**: Evaluates page title presence (`CR-005`), meta descriptions (`CR-006`), heading hierarchy and malformed H1 text (`CR-007`), canonical URLs (`CR-009`), and structural sections (`CR-010`).
-4. **Discoverability**: Evaluates internal link discovery (`CR-008`) and site crawl coverage (`CR-012`).
+Provide the manifest as a file path. Do not pass a live URL.
 
-## Standard Check Matrix
+## Procedure
+Execute these steps in order.
 
-| Check ID | Title | Category | Severity | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| **`CR-001`** | **HTTP Response Status** | Technical Accessibility | High / Info | Verifies 200 OK HTTP response code. |
-| **`CR-002`** | **AI Crawler Robots Directives** | Technical Accessibility | High / Info | Inspects `X-Robots-Tag` headers for `noindex` directives. |
-| **`CR-003`** | **Pre-Rendering Content Availability** | Technical Accessibility | Medium / Info | Detects empty container divs indicating JS rendering dependence. |
-| **`CR-004`** | **Text Extractability & Word Boundaries** | Extractability | Medium / Info | Detects suspicious word-boundary collapse where words run together. |
-| **`CR-005`** | **Page Title Presence & Quality** | Content Structure | Medium / Low / Info | Validates `<title>` tag presence and descriptive length. |
-| **`CR-006`** | **Meta Description Presence** | Content Structure | Low / Info | Checks for `<meta name="description">` tag content. |
-| **`CR-007`** | **Heading Structure & H1 Quality** | Content Structure | Medium / Low / Info | Audits H1 count, heading hierarchy, and malformed H1 text. |
-| **`CR-008`** | **Discoverable Internal Links** | Discoverability | Low / Info | Discovers `<a href>` internal links for crawler traversal. |
-| **`CR-009`** | **Canonical URL Declaration** | Content Structure | Low / Info | Verifies `<link rel="canonical">` presence and target alignment. |
-| **`CR-010`** | **Site-Wide Content Discoverability** | Content Structure | Medium / Info | Evaluates site-wide content coverage across page roles. |
-| **`CR-011`** | **Raw vs Rendered Text Discrepancy** | Extractability | Medium / Info / N/A | Compares raw pre-rendered text length vs rendered DOM text length. |
-| **`CR-012`** | **Site Crawl Coverage** | Discoverability | Low / Info | Audits total pages discovered vs crawled, page roles, and depth bounds. |
+1. **Do not crawl the site yourself.** The entrypoint already crawled it.
 
-## Code Entrypoint & Tests
-- Implementation module: `src/analysis/crawl_render_audit.py`
-- Unit tests: `tests/test_crawl_render_audit.py`
+2. **Load the evidence.** If you have a report.json, extract the crawl
+   field and save it as a manifest file (e.g. manifest.json). If you only
+   have a URL and no manifest, you cannot run this skill.
+
+3. **Run the bundled script:**
+   python {baseDir}/scripts/run.py <manifest.json>
+   where {baseDir} is this skill's folder (skills/crawl-render-audit/).
+   If you cannot run Python, skip rather than invent findings.
+
+4. **Read the output.** The script prints JSON with ok: true and findings,
+   or ok: false with a reason. Parse it.
+
+5. **Return the findings.** Return the findings array from the script output.
+   Do not rewrite or invent findings.
+
+## Output
+A list of findings consumed by the entrypoint composer.
+See references/checks.md for the full check matrix (CR-001 through CR-012).
+
+## Allowed tools
+- GET HTTP requests (only to validate sameAs URLs or public corroboration)
+- Parse HTML (from the manifest, not from live crawling)
+- Read local files (the manifest, the SKILL.md, references/)
+- Run the bundled Python script
+
+NO writes to the target site. NO crawling the target site yourself.

@@ -1,36 +1,59 @@
 ---
 name: structured-data-audit
-description: Validates Schema.org JSON-LD syntax, entity types, completeness on product pages, and visible content consistency.
+description: >
+  Validates Schema.org JSON-LD syntax, entity types, and completeness on
+  product pages. Flags parse errors and incomplete Product/Offer schemas only
+  on pages that ARE product pages. Missing schema on general pages is
+  informational. Do NOT start here.
+license: MIT
+allowed-tools: GET HTTP, parse HTML, read files, run bundled Python scripts
 ---
 
-# Structured Data Audit Skill
+## When to use
+This skill inspects structured data markup (JSON-LD, Microdata) on web pages.
+Trigger phrases: "JSON-LD audit", "schema.org check", "structured data audit",
+"product schema validation".
 
-## Purpose
-Inspects web page HTML to audit structured data markup (JSON-LD script blocks, Microdata, and relevant meta tags) and reports observable technical findings without treating general missing schema as defects.
+**Do not start here.** This is a specialist skill invoked automatically by the
+entrypoint (audit-orchestrator). If you are auditing a site, start with the
+entrypoint skill. Only invoke this skill directly if:
+- You already have a report.json or crawl manifest from the entrypoint, AND
+- You need to re-run or inspect only the structured data findings.
 
-## Operational Constraints & Capabilities
-- **Allowed Tools:** GET HTTP, parse HTML, no writes.
-- **Code Entrypoint:** `src/analysis/structured_data_audit.py`
-- **Output:** `List[Finding]` consumed by composer.
+## Inputs
+- A crawl manifest (JSON) from the entrypoint, OR
+- A report.json file (extract the crawl field)
 
-## When to Use
-Invoked by `audit-orchestrator` during the semantic structured data analysis phase.
+Provide the manifest as a file path. Do not pass a live URL.
 
-## Standard Check Matrix
+## Procedure
+Execute these steps in order.
 
-| Check ID | Check Title | Severity | Description |
-| :--- | :--- | :--- | :--- |
-| **`SD-001`** | **JSON-LD Detection** | Info / Low | Detects presence of `<script type="application/ld+json">` blocks. |
-| **`SD-002`** | **JSON-LD Parse Validity** | High | Verifies that all detected JSON-LD blocks parse as valid JSON syntax. |
-| **`SD-003`** | **Schema Type Detection** | Info | Extracts and lists declared `@type` schema values across the site. |
-| **`SD-004`** | **Entity Information Completeness** | High / Medium / Info | Checks completeness of core properties for `Product`, `Offer`, `Organization`, etc. on applicable pages. |
-| **`SD-005`** | **Structured Data vs Visible Content Consistency** | High | Deterministically verifies consistency between structured entity names and visible `<title>` / `<h1>` text. |
-| **`SD-006`** | **Duplicate or Conflicting Structured Data** | Medium | Identifies multiple schema objects of the same type with conflicting canonical property values. |
+1. **Do not crawl the site yourself.** The entrypoint already crawled it.
 
-## Implementation Principles
-- **Defects on Real Issues Only:** Only flags syntax errors or incomplete Product/Offer schemas on pages that are classified as product pages. Missing schema on general pages is informational.
-- **Traceable Evidence:** Every finding includes precise evidence pointers (`location`, `source_url`, `evidence_type`, `observed`, `expected`).
+2. **Load the evidence.** If you have a report.json, extract the crawl
+   field and save it as a manifest file (e.g. manifest.json). If you only
+   have a URL and no manifest, you cannot run this skill.
 
-## Code Entrypoint & Tests
-- Implementation module: `src/analysis/structured_data_audit.py`
-- Unit tests: `tests/test_structured_data_audit.py`
+3. **Run the bundled script:**
+   python {baseDir}/scripts/run.py <manifest.json>
+   where {baseDir} is this skill's folder (skills/structured-data-audit/).
+   If you cannot run Python, skip rather than invent findings.
+
+4. **Read the output.** The script prints JSON with ok: true and findings,
+   or ok: false with a reason. Parse it.
+
+5. **Return the findings.** Return the findings array from the script output.
+   Do not rewrite or invent findings.
+
+## Output
+A list of findings consumed by the entrypoint composer.
+See references/checks.md for the full check matrix (SD-001 through SD-006).
+
+## Allowed tools
+- GET HTTP requests (only to validate sameAs URLs or public corroboration)
+- Parse HTML (from the manifest, not from live crawling)
+- Read local files (the manifest, the SKILL.md, references/)
+- Run the bundled Python script
+
+NO writes to the target site. NO crawling the target site yourself.

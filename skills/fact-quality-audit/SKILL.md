@@ -1,29 +1,59 @@
 ---
 name: fact-quality-audit
-description: Evaluates factual consistency across pages, numerical clarity and units, ungrounded marketing superlatives, and proposition precision.
+description: >
+  Evaluates factual consistency across pages, numerical clarity and units,
+  ungrounded marketing superlatives, and proposition precision. Detects
+  cross-page contradictions (pricing, hours, refunds) and unitless numbers.
+  Do NOT start here.
+license: MIT
+allowed-tools: GET HTTP, parse HTML, read files, run bundled Python scripts
 ---
 
-# Fact Quality Audit Skill
+## When to use
+This skill evaluates claim precision, semantic clarity, and cross-page factual
+consistency. Trigger phrases: "fact quality audit", "contradictory claims",
+"unitless numbers", "ungrounded superlatives", "RAG hallucination risk".
 
-## Purpose
-Evaluates textual content across brand pages to measure claim precision, semantic clarity, cross-page factual consistency (pricing, hours, refunds), and vulnerability to AI hallucination during retrieval-augmented generation (RAG).
+**Do not start here.** This is a specialist skill invoked automatically by the
+entrypoint (audit-orchestrator). If you are auditing a site, start with the
+entrypoint skill. Only invoke this skill directly if:
+- You already have a report.json or crawl manifest from the entrypoint, AND
+- You need to re-run or inspect only the fact quality findings.
 
-## Operational Constraints & Capabilities
-- **Allowed Tools:** GET HTTP, parse HTML, no writes.
-- **Code Entrypoint:** `src/analysis/fact_quality_audit.py`
-- **Output:** `List[Finding]` consumed by composer.
+## Inputs
+- A crawl manifest (JSON) from the entrypoint, OR
+- A report.json file (extract the crawl field)
 
-## When to Use
-Invoked by `audit-orchestrator` during the factual quality analysis phase.
+Provide the manifest as a file path. Do not pass a live URL.
 
-## Standard Check Matrix
+## Procedure
+Execute these steps in order.
 
-| Check ID | Check Title | Severity | Description |
-| :--- | :--- | :--- | :--- |
-| **`FQ-02`** | **Contradictory Proposition Claims** | High | Identifies conflicting pricing, refund policy windows, operating hours, or founding years across pages. |
-| **`FQ-03`** | **Unitless Numeric Metrics** | Medium | Identifies numerical metrics lacking explicit units, benchmarks, or baseline comparators. |
-| **`FQ-04`** | **Ungrounded Superlatives** | Medium | Flags marketing superlatives (`#1`, `best`, `only`, `leading`) lacking adjacent supporting citations or benchmark reports. |
+1. **Do not crawl the site yourself.** The entrypoint already crawled it.
 
-## Code Entrypoint & Tests
-- Implementation module: `src/analysis/fact_quality_audit.py`
-- Unit tests: `tests/test_analysis_skills.py`
+2. **Load the evidence.** If you have a report.json, extract the crawl
+   field and save it as a manifest file (e.g. manifest.json). If you only
+   have a URL and no manifest, you cannot run this skill.
+
+3. **Run the bundled script:**
+   python {baseDir}/scripts/run.py <manifest.json>
+   where {baseDir} is this skill's folder (skills/fact-quality-audit/).
+   If you cannot run Python, skip rather than invent findings.
+
+4. **Read the output.** The script prints JSON with ok: true and findings,
+   or ok: false with a reason. Parse it.
+
+5. **Return the findings.** Return the findings array from the script output.
+   Do not rewrite or invent findings.
+
+## Output
+A list of findings consumed by the entrypoint composer.
+See references/checks.md for the full check matrix (FQ-01 through FQ-04).
+
+## Allowed tools
+- GET HTTP requests (only to validate sameAs URLs or public corroboration)
+- Parse HTML (from the manifest, not from live crawling)
+- Read local files (the manifest, the SKILL.md, references/)
+- Run the bundled Python script
+
+NO writes to the target site. NO crawling the target site yourself.

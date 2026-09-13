@@ -1,35 +1,59 @@
 ---
 name: engagement-audit
-description: Evaluates on-site human visitor orientation, above-the-fold clarity (Who/What/Next), navigation coverage, breadcrumbs, and actionable CTAs.
+description: >
+  Evaluates on-site human visitor orientation (Who/What/Next), navigation
+  coverage of offerings, interior breadcrumb hierarchy, and actionable CTAs
+  vs "Learn More" loops. Do NOT start here.
+license: MIT
+allowed-tools: GET HTTP, parse HTML, read files, run bundled Python scripts
 ---
 
-# On-Site Visitor Engagement Audit Skill
+## When to use
+This skill evaluates how clearly a website presents orientation information to
+human visitors and AI agents. Trigger phrases: "engagement audit",
+"landing page orientation", "breadcrumb check", "CTA audit", "navigation
+coverage", "who what next".
 
-## Purpose
-Evaluates how clearly and effectively a website presents core orientation information to human visitors and AI agents navigating the user experience. Focuses on visitor clarity, navigation discoverability, page context hierarchy, and actionable next steps.
+**Do not start here.** This is a specialist skill invoked automatically by the
+entrypoint (audit-orchestrator). If you are auditing a site, start with the
+entrypoint skill. Only invoke this skill directly if:
+- You already have a report.json or crawl manifest from the entrypoint, AND
+- You need to re-run or inspect only the engagement findings.
 
-## Operational Constraints & Capabilities
-- **Allowed Tools:** GET HTTP, parse HTML, no writes.
-- **Code Entrypoint:** `src/analysis/engagement_audit.py`
-- **Output:** `List[Finding]` consumed by composer.
+## Inputs
+- A crawl manifest (JSON) from the entrypoint, OR
+- A report.json file (extract the crawl field)
 
-## When to Use
-Invoked by `audit-orchestrator` during the visitor engagement and orientation analysis phase.
+Provide the manifest as a file path. Do not pass a live URL.
 
-## Standard Check Matrix
+## Procedure
+Execute these steps in order.
 
-| Check ID | Check Title | Severity | Description |
-| :--- | :--- | :--- | :--- |
-| **`EG-01`** | **Landing Orientation (Who/What/Next)** | High | Evaluates whether the landing screen immediately states who the brand is (H1), what it provides (subheading), and what the visitor should do next (actionable CTA). |
-| **`EG-02`** | **Navigation Coverage of Offerings** | Medium | Verifies that site navigation links route to key product and service offerings claimed in homepage headings. |
-| **`EG-03`** | **Interior Breadcrumb Hierarchy** | Medium | Checks deep interior pages (depth >= 2) for breadcrumb hierarchy or parent navigation context. |
-| **`EG-04`** | **Actionable Call-to-Action (CTA)** | Medium | Detects generic "Learn More" loops pointing back to the same page without real conversion actions. |
+1. **Do not crawl the site yourself.** The entrypoint already crawled it.
 
-## Guardrails
-- Strictly evaluates human and agent visitor orientation.
-- **FORBIDDEN as core defects:** Missing `/llms.txt`, `/openapi.json`, or live chat widgets are never flagged as defects.
-- **JS-Shell Protection:** Pages with low visible word count (<80 words) or pre-render JS shells are not penalized under `EG-01` so `crawl-render-audit` (`CR-010`) owns rendering issues without double-counting.
+2. **Load the evidence.** If you have a report.json, extract the crawl
+   field and save it as a manifest file (e.g. manifest.json). If you only
+   have a URL and no manifest, you cannot run this skill.
 
-## Code Entrypoint & Tests
-- Implementation module: `src/analysis/engagement_audit.py`
-- Unit tests: `tests/test_analysis_skills.py`
+3. **Run the bundled script:**
+   python {baseDir}/scripts/run.py <manifest.json>
+   where {baseDir} is this skill's folder (skills/engagement-audit/).
+   If you cannot run Python, skip rather than invent findings.
+
+4. **Read the output.** The script prints JSON with ok: true and findings,
+   or ok: false with a reason. Parse it.
+
+5. **Return the findings.** Return the findings array from the script output.
+   Do not rewrite or invent findings.
+
+## Output
+A list of findings consumed by the entrypoint composer.
+See references/checks.md for the full check matrix (EG-01 through EG-04).
+
+## Allowed tools
+- GET HTTP requests (only to validate sameAs URLs or public corroboration)
+- Parse HTML (from the manifest, not from live crawling)
+- Read local files (the manifest, the SKILL.md, references/)
+- Run the bundled Python script
+
+NO writes to the target site. NO crawling the target site yourself.

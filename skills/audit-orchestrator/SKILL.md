@@ -1,32 +1,86 @@
 ---
 name: audit-orchestrator
-description: Master entrypoint skill orchestrating end-to-end brand AI readiness audits across all 6 specialized analysis skills.
+description: >
+  Entrypoint skill that runs a full AI-discoverability + on-site engagement
+  audit of a brand website and returns the canonical Adobe report.json.
+  Use when asked to "audit this site for AI discoverability", "check if
+  assistants can find/cite this brand", "run a brand AI readiness audit", or
+  "audit website engagement". This is the only skill to start with — it
+  orchestrates all 6 specialist skills automatically.
+license: MIT
+allowed-tools: GET HTTP, read files, run bundled Python scripts
 ---
 
-# Audit Orchestrator Skill
+## When to use
+Use this skill when asked to audit a website for AI discoverability (why
+assistants don't find or cite it) and on-site engagement (why visitors don't
+stay). Trigger phrases: "audit this site", "AI discoverability audit",
+"brand AI readiness", "website audit for AI", "check if my site is AI-ready".
 
-## Purpose
-The **Audit Orchestrator** is the primary marketplace entrypoint skill for the Brand AI Readiness Audit package. It validates the target URL, conducts site-wide discovery and crawling, executes the canonical evidence extraction layer, coordinates the execution of all 6 registered audit sub-skills, merges findings, enforces error isolation, and synthesizes the canonical Adobe Report JSON.
+This is the ONLY skill you should start with. The 6 specialist skills are
+invoked automatically by this orchestrator — do not invoke them directly.
 
-## Operational Constraints & Capabilities
-- **Allowed Tools:** GET HTTP requests, parse HTML, file read/write (for output reports only), no destructive network writes or state mutations.
-- **Code Entrypoint:** `src/orchestrator.py`
-- **Output:** Canonical Adobe `report.json` with severity summary and sorted `findings[]`.
+## Inputs
+- URL or domain to audit (e.g. `https://example.com`)
+- Optional: `--max-pages N` (default 100), `--max-depth N` (default 3),
+  `-o report.json` (output path, default `report.json`)
 
-## Execution Workflow
-1. **Target Validation & Bounded Crawl:** Validates that the provided target URL has a valid scheme and hostname, and discovers pages within configurable depth/page limits.
-2. **Canonical Evidence Extraction:** Coordinates modular extractors to produce a normalized, traceable `ExtractionResult` with sequential `EV-00001` IDs.
-3. **Sub-Skill Delegation:** Dispatches the full evidence store to all 6 registered analysis skills:
-   - `crawl-render-audit`: Evaluates HTTP headers, robots directives, DOM text extractability, and SSR/CSR parity.
-   - `structured-data-audit`: Audits Schema.org JSON-LD syntax, entity types, completeness on product pages, and visible content consistency.
-   - `fact-quality-audit`: Detects cross-page contradictions (pricing, hours, refunds), unitless numbers, and ungrounded superlatives.
-   - `freshness-corroboration`: Evaluates timestamp consistency, content staleness >12 months (ignoring copyright), and public source corroboration (Wikidata, Wikipedia, sameAs).
-   - `entity-identity-audit`: Audits brand entity naming consistency between title/H1 and schema, sameAs links (404 detection), and cross-page NAP consistency.
-   - `engagement-audit`: Evaluates above-the-fold orientation (Who/What/Next), navigation coverage of offerings, interior breadcrumb hierarchy, and actionable CTAs.
-4. **Error Isolation:** Encapsulates sub-skill exceptions, guaranteeing the audit finishes and returns valid findings.
-5. **Adobe Report Synthesis:** Uses `AdobeReportComposer` to filter out non-defects, sort by severity, and output canonical Adobe `report.json`.
+## Procedure
+Execute these steps in order. Do not skip steps.
 
-## Code Entrypoint
-- Implementation module: `src/orchestrator.py`
-- CLI Usage: `python -m src.orchestrator https://example.com -o report.json`
-- Unit tests: `tests/test_orchestrator.py`
+1. **Validate the URL.** It must start with `http://` or `https://` and have
+   a non-empty hostname. If invalid, stop and report the error.
+
+2. **Run the bundled script.** Do not figure out Python imports or crawl the
+   site yourself. Run exactly:
+   ```bash
+   python {baseDir}/scripts/run.py <URL> -o report.json
+   ```
+   where `{baseDir}` is this skill's folder (`skills/audit-orchestrator/`).
+   Equivalently, from the marketplace root:
+   ```bash
+   python skills/audit-orchestrator/scripts/run.py https://example.com -o report.json
+   ```
+   The script crawls the site, extracts evidence, runs all 6 specialist audits,
+   and writes `report.json`. Default limits: 100 pages, depth 3. For a quick
+   check use `--max-pages 8 --max-depth 1`.
+
+3. **Read report.json.** Parse the JSON file the script wrote.
+
+4. **Return it unchanged.** Return the exact contents of `report.json` as the
+   skill result. Do not rewrite, filter, re-rank, or summarize the findings.
+   The report is the output.
+
+## Output
+A single Adobe report JSON file (`report.json`). See `references/checks.md`
+for the check list and `src/README.md` for the engine design.
+
+Minimal schema:
+```json
+{
+  "site": "example.com",
+  "audited_at": "2026-09-20T14:32:00Z",
+  "summary": { "total_findings": 6, "critical": 1, "high": 2, "medium": 3 },
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "...",
+      "severity": "high",
+      "evidence": "URL + count or quoted snippet a non-expert can re-find.",
+      "suggested_action": { "summary": "...", "priority": "high" }
+    }
+  ]
+}
+```
+`severity` is one of `critical`, `high`, `medium`, `low`. `suggested_action` is
+an object with `summary` and `priority` (never a string).
+
+## Allowed tools
+- GET HTTP requests (to the target site and public corroboration sources)
+- Read local files (the report, the SKILL.md, references/)
+- Run the bundled Python script (`scripts/run.py`)
+- Write only the output report file (`report.json`)
+
+NO writes to the target site. NO POST/PUT/PATCH/DELETE. NO browser automation
+(Playwright) unless the script explicitly decides to render — the script owns
+that decision, not the agent.

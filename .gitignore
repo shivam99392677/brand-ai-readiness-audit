@@ -122,3 +122,6 @@ reports/*.json
 reports/*.html
 tmp/
 scratch/
+
+VIDEO_SCRIPT.md 
+SUBMISSION.md

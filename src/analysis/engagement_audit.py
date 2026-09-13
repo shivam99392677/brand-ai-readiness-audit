@@ -5,6 +5,7 @@ interior page breadcrumb hierarchy, and actionable Call-to-Action (CTA) design.
 This skill strictly evaluates visitor orientation and does NOT flag missing /llms.txt or /openapi.json.
 """
 
+import re
 from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 from src.evidence.models import WebsiteEvidence
@@ -132,6 +133,10 @@ class EngagementAuditor:
             # EG-02: Navigation Labels Do Not Cover Core Offerings
             # -------------------------------------------------------------
             h2_texts = [h.data.get("text", "").lower() for h in home_headings if h.data.get("level") == 2]
+            # Skip statistic/counter H2s (e.g. "1,000,000+ articles") — a count is
+            # not an offering, and comparing it to nav labels fabricates a finding
+            # on portals and wikis.
+            h2_texts = [t for t in h2_texts if not re.search(r"\d", t)]
             nav_link_texts = set(l.data.get("anchor_text", "").strip().lower() for l in home_links if l.data.get("is_internal"))
 
             uncovered_offerings: List[str] = []

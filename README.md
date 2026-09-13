@@ -24,6 +24,20 @@ Or with custom crawl depth and page limits:
 python -m src.orchestrator https://example.com --max-pages 50 --max-depth 3 -o report.json
 ```
 
+### 2b. How an AGENT runs this (follow SKILL.md, not README)
+
+A generic LLM agent does NOT read this README. It reads `marketplace.json`, picks
+the skill with `entrypoint: true`, then follows
+`skills/audit-orchestrator/SKILL.md` which tells it to run:
+
+```bash
+python skills/audit-orchestrator/scripts/run.py <URL> -o report.json
+```
+
+That script resolves the project root, calls `src/orchestrator.py`, and writes
+`report.json`. The agent then reads `report.json` and returns it unchanged.
+See `skills/audit-orchestrator/SKILL.md` for the full agent procedure.
+
 ### 3. Run Automated Tests
 Execute the complete test suite:
 ```bash
@@ -174,14 +188,18 @@ The output generated at `report.json` adheres strictly to the required Adobe Hac
 
 ---
 
-## 📦 Submission Packaging (<45 MB)
+## 📦 Submission Packaging (≤ 50 MB)
 
-To create the clean submission ZIP package excluding git history, virtual environments, and caches:
+To create the clean submission ZIP package excluding git history, virtual environments, caches, and non-required directories (tests/, docs/, gui/, config/, reports/):
+
 ```bash
 python scripts/pack.py
 # or on Linux/macOS:
 bash scripts/pack.sh
 ```
+
+The zip contains only what Adobe requires: `marketplace.json`, `README.md`, `LICENSE`, `skills/`, `src/`, `requirements.txt`, `pyproject.toml` (optional), and `scripts/`.
+
 
 ---
 

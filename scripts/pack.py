@@ -5,14 +5,23 @@ import sys
 import zipfile
 
 OUTPUT_ZIP = "brand-ai-readiness-audit.zip"
-MAX_ALLOWED_MB = 45.0
+MAX_ALLOWED_MB = 50.0
 
 EXCLUDE_PATTERNS = [
     ".git",
     "node_modules",
     "__pycache__",
     ".pytest_cache",
-    "tests/fixtures",
+    "egg-info",
+    ".venv",
+    "tests",
+    "docs",
+    "gui",
+    "config",
+    "reports",
+    "uv.lock",
+    "VIDEO_SCRIPT.md",
+    "SUBMISSION.md",
     "report.json",
     OUTPUT_ZIP,
     ".DS_Store",
@@ -20,14 +29,10 @@ EXCLUDE_PATTERNS = [
 
 INCLUDED_TOP_LEVEL = [
     "marketplace.json",
+    "README.md",
+    "LICENSE",
     "skills",
     "src",
-    "config",
-    "docs",
-    "gui",
-    "tests",
-    "LICENSE",
-    "README.md",
     "requirements.txt",
     "pyproject.toml",
     "scripts",

@@ -184,6 +184,7 @@ def audit_crawl_render_skill(
     status_code: int = 200,
     rendered_html_content: Optional[str] = None,
     crawl_manifest: Optional[Any] = None,
+    website: Optional[Any] = None,
 ) -> List[Finding]:
     """Executes crawl & render accessibility, extractability, and discoverability checks (CR-001 through CR-012)."""
     headers = headers or {}
@@ -357,14 +358,19 @@ def audit_crawl_render_skill(
     title_val = parser.title_text
     # Fallback: the crawler's own metadata extractor may have captured a title
     # (e.g. og:title / site_name) even when the strict <head><title> parse missed
-    # it. Never report "missing <title>" when a title exists in crawl metadata.
+    # it. Never report "missing <title>" when a title exists in crawl metadata
+    # (crawl manifest pages OR website evidence pages).
     manifest_title = None
+    pages_iter: List[Any] = []
     if crawl_manifest is not None and hasattr(crawl_manifest, "pages"):
-        for p in crawl_manifest.pages:
-            if getattr(p, "url", "") == url or getattr(p, "depth", 1) == 0:
-                manifest_title = getattr(p, "title", None)
-                if manifest_title:
-                    break
+        pages_iter = list(crawl_manifest.pages)
+    if website is not None and hasattr(website, "pages"):
+        pages_iter.extend(list(website.pages))
+    for p in pages_iter:
+        if getattr(p, "url", "") == url or getattr(p, "depth", 1) == 0:
+            manifest_title = getattr(p, "title", None)
+            if manifest_title:
+                break
     if not title_val and manifest_title:
         title_val = manifest_title
     title_len = len(title_val) if title_val else 0
@@ -892,6 +898,7 @@ def run_crawl_render_audit(
             headers=headers or {},
             status_code=status_code or 200,
             crawl_manifest=crawl_manifest,
+            website=website,
         )
 
     # 2. Extract homepage or primary page from WebsiteEvidence
@@ -914,5 +921,6 @@ def run_crawl_render_audit(
         headers=p_headers,
         status_code=p_status,
         crawl_manifest=crawl_manifest,
+        website=website,
     )
 
