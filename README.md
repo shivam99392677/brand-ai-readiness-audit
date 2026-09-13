@@ -47,17 +47,77 @@ The framework operates on a strict **Evidence-First Architecture**:
 
 ```mermaid
 flowchart TD
-    A["Target Website URL"] --> B["SiteCrawler (Discovery & Crawl)"]
+    A["Target Website URL"] --> B["SiteCrawler (robots → sitemap → bounded crawl → selective render)"]
     B --> C["ExtractionManager (EV-00001 Canonical Evidence Store)"]
-    C --> D1["1. crawl-render-audit"]
-    C --> D2["2. structured-data-audit"]
-    C --> D3["3. fact-quality-audit"]
-    C --> D4["4. freshness-corroboration"]
-    C --> D5["5. entity-identity-audit"]
-    C --> D6["6. engagement-audit"]
-    D1 & D2 & D3 & D4 & D5 & D6 --> E["AdobeReportComposer"]
+    C --> D1["1. crawl-render-audit (CR-001..012)"]
+    C --> D2["2. structured-data-audit (SD-001..006)"]
+    C --> D3["3. fact-quality-audit (FQ-01..04)"]
+    C --> D4["4. freshness-corroboration (FC-01..03)"]
+    C --> D5["5. entity-identity-audit (EI-01..03)"]
+    C --> D6["6. engagement-audit (EG-01..04)"]
+    B --> R1["extended: sitemap-audit (CR-013)"]
+    B --> R2["extended: bot-block-audit (CR-014)"]
+    D1 & D2 & D3 & D4 & D5 & D6 & R1 & R2 --> E["AdobeReportComposer"]
     E --> F["Adobe Report JSON (report.json)"]
 ```
+
+**Content rule enforced across the pipeline:** every finding sentence must be backed by evidence a human can re-find on the live page in 30 seconds (a URL + a count or a quoted snippet). Reachability errors (robots.txt / sitemap.xml timeouts) are reported as **unscored/LOW**, never as site defects; "AI Bot Blocking" is only claimed when an explicit `Disallow: /` rule exists for a target bot; and missing schema / missing sameAs are **not** defects unless a product page or a declared Organization is involved.
+
+---
+
+## 🧪 Offline Content-QA Fixtures
+
+Prove the auditor catches the four defect classes without touching the network (tiny HTML sites served on loopback):
+
+```bash
+python scripts/fixture_audit.py A B C D
+```
+
+| Fixture | Defect planted | Expected catch (verified) |
+|---|---|---|
+| **A — REACH** | `User-agent: GPTBot` + `Disallow: /` in robots.txt | HIGH `CR-014` — "robots.txt explicitly disallows AI bots: gptbot" |
+| **B — EXTRACT** | Product page with visible "$49 / month" and broken JSON-LD `{ "name": "Pro"` | HIGH `SD-002` — quotes `parse_error: Expecting ',' delimiter: line 1 column 16` + raw snippet |
+| **C — TRUST** | `/pricing` "Plan A $10/mo" vs `/docs` "Plan A $25/mo" | HIGH `FQ-02` — names both URLs and both prices with EV ids |
+| **D — ENGAGEMENT** | H1 "Welcome", only CTA "Learn more" href="#", interior `/about/team` without breadcrumbs | `EG-01` + `EG-04` + `EG-03` (with the interior URL); no llms.txt mentions |
+
+---
+
+## 📊 Round-3 Content QA Results
+
+Live audits on 7 hosts (example.com, www.wikipedia.org, docs.python.org, stripe.com, www.mozilla.org, www.python.org, news.ycombinator.com) were manually verified against the live pages. Findings that failed human verification were fixed in the skills — not hidden in the composer:
+
+| Fix | Before | After |
+|---|---|---|
+| `CR-014` bots | robots.txt 404/403/timeout reported as "AI Bot Blocking" (MEDIUM/HIGH) | LOW "robots.txt Not Accessible" — blocking **not** claimed; explicit block still HIGH with quoted rules |
+| `CR-013` sitemap | 404/timeout reported as HIGH FAIL "expected 200" | LOW "No Sitemap at /sitemap.xml (HTTP …)" + robots.txt hint; timeouts unscored |
+| `CR-005` title | false "missing <title>" when a strict parse missed og-derived titles | manifest-title fallback (wikipedia false positive eliminated) |
+| `FQ-02` contradictions | "US$1.9tn"→`$1.9` magnitude artifacts + ₹-vs-$ locale pairs mass-produced fake contradictions | magnitude + disjoint-currency guards (stripe noise reduced ~10×) |
+| `EI-01` brand names | FAQ questions ("Do you have setup fees?") and branch offices ("Stripe Berlin") counted as conflicting brand names | root-brand collapse before conflict judgment |
+| `EG-03` breadcrumbs | pages with zero links never iterated (false negative on `/about/team`) | all crawled interior URLs iterated; parent-path links count as breadcrumb context |
+
+**example.com before → after:** 5 findings incl. MEDIUM "Missing External Entity Corroboration" + duplicate sameAs + reach HIGHs → **0 critical / 0 high / 0 medium / 5 low** (meta description, 0 internal links, canonical, sitemap 404, robots 404 — all true, all LOW).
+**Offline precision across live sites:** ≈45% of countable findings were human-verified TRUE before fixes → **≈74% after**; remaining known P0/P1 items (junk-phone NAP extraction on scraped digits, portal utility-site exemptions) are tracked in `docs/decisions.md`.
+
+---
+
+## 📁 Repository Map (each directory has its own README with mermaid diagrams)
+
+| Directory | README |
+|---|---|
+| `src/` (orchestrator, models) | [src/README.md](src/README.md) |
+| `src/analysis/` (8 audit skills) | [src/analysis/README.md](src/analysis/README.md) |
+| `src/crawler/` (engine, robots, sitemap, render) | [src/crawler/README.md](src/crawler/README.md) |
+| `src/extraction/` (evidence extractors) | [src/extraction/README.md](src/extraction/README.md) |
+| `src/shared/` (canonical evidence schema) | [src/shared/README.md](src/shared/README.md) |
+| `src/evidence/` (site domain models) | [src/evidence/README.md](src/evidence/README.md) |
+| `src/reporting/` (Adobe composer) | [src/reporting/README.md](src/reporting/README.md) |
+| `skills/` (marketplace package + 7 skill folders) | [skills/README.md](skills/README.md) |
+| `gui/` (visual test harness) | [gui/README.md](gui/README.md) |
+| `scripts/` (fixtures + packaging) | [scripts/README.md](scripts/README.md) |
+| `tests/` (pipeline & content-QA tests) | [tests/README.md](tests/README.md) |
+| `config/` (audit configuration) | [config/README.md](config/README.md) |
+| `docs/` (architecture & decisions) | [docs/README.md](docs/README.md) |
+| `reports/` (audit outputs & QA records) | [reports/README.md](reports/README.md) |
 
 ---
 
