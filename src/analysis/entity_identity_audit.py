@@ -98,14 +98,31 @@ class EntityIdentityAuditor:
                     if raw_n:
                         all_schema_names.add(raw_n)
 
+            # Collapse entity-name noise before judging conflicts:
+            #  - drop FAQ-question strings ("Do you have setup fees?") which are
+            #    FAQPage headings, not brand names;
+            #  - drop office/branch names ("Stripe Berlin") when the root brand
+            #    ("Stripe") is also declared — a branch is not a conflicting entity;
+            #  - only Organization-like roots participate in the title comparison.
+            def _is_question(n: str) -> bool:
+                return "?" in n
+
+            root_names = {n for n in all_schema_names if not _is_question(n)}
+            single_roots = {n for n in root_names if len(n.split()) == 1}
+            root_names = {
+                n for n in root_names
+                if len(n.split()) == 1
+                or not any(normalize_name_str(n).startswith(normalize_name_str(s)) for s in single_roots)
+            }
+
             # Check if multiple conflicting organization names are declared in Schema
-            if len(all_schema_names) > 1:
-                norm_schema_roots = {normalize_name_str(n): n for n in all_schema_names}
+            if len(root_names) > 1:
+                norm_schema_roots = {normalize_name_str(n): n for n in root_names}
                 if len(norm_schema_roots) > 1:
                     name_discrepancy_evs.append(Evidence(
                         source_url=website.start_url if website else "https://example.com",
                         evidence_type="schema_name_conflict",
-                        observed={"declared_schema_names": sorted(list(all_schema_names))},
+                        observed={"declared_schema_names": sorted(list(root_names))},
                         location="JSON-LD Organization.name",
                     ))
 
@@ -114,16 +131,16 @@ class EntityIdentityAuditor:
             home_title = titles_by_url.get(start_u, "")
             home_h1s = h1s_by_url.get(start_u, [])
 
-            if all_schema_names and home_title:
+            if root_names and home_title:
                 norm_title = normalize_name_str(home_title)
-                schema_name_matches = any(normalize_name_str(sn) in norm_title for sn in all_schema_names)
+                schema_name_matches = any(normalize_name_str(sn) in norm_title for sn in root_names)
                 if not schema_name_matches and len(norm_title.split()) > 0:
                     # Potential mismatch
                     name_discrepancy_evs.append(Evidence(
                         source_url=start_u,
                         evidence_type="brand_title_mismatch",
                         observed={
-                            "declared_schema_names": sorted(list(all_schema_names)),
+                            "declared_schema_names": sorted(list(root_names)),
                             "page_title": home_title,
                         },
                         location="<head> > <title> vs JSON-LD",
@@ -201,21 +218,31 @@ class EntityIdentityAuditor:
                     recommendation="Repair or remove broken sameAs profile URLs.",
                 ))
             elif not all_same_as:
-                findings.append(Finding(
-                    skill="entity-identity-audit",
-                    check_id="EI-02",
-                    title="Missing Canonical sameAs Social Profiles",
-                    status=FindingStatus.WARNING,
-                    severity=FindingSeverity.MEDIUM,
-                    description="No sameAs entity reference links were discovered in Organization schema or structured markup.",
-                    evidence=[Evidence(
-                        source_url=website.start_url if website else "https://example.com",
-                        evidence_type="missing_sameas",
-                        observed={"same_as_count": 0},
-                        location="Schema.org sameAs",
-                    )],
-                    recommendation="Add sameAs URLs to Organization schema linking to official social profiles and Knowledge Graph entities.",
-                ))
+                # Missing sameAs is only a LOW suggestion when an Organization/Brand
+                # entity is actually declared (so sameAs could be attached to it).
+                # Sites with no Organization entity (e.g. placeholder domains) are
+                # NOT identity failures and must be skipped entirely.
+                has_org_entity = any(
+                    (ev.data.get("name") or "").strip()
+                    for ev_list in org_names_by_url.values() for ev in ev_list
+                )
+                if has_org_entity:
+                    findings.append(Finding(
+                        skill="entity-identity-audit",
+                        check_id="EI-02",
+                        title="Missing Canonical sameAs Social Profiles",
+                        status=FindingStatus.WARNING,
+                        severity=FindingSeverity.LOW,
+                        description="Organization entity is declared but no sameAs entity reference links were discovered in structured markup.",
+                        evidence=[Evidence(
+                            source_url=website.start_url if website else "https://example.com",
+                            evidence_type="missing_sameas",
+                            observed={"same_as_count": 0},
+                            location="Schema.org sameAs",
+                        )],
+                        recommendation="Add sameAs URLs to Organization schema linking to official social profiles and Knowledge Graph entities.",
+                    ))
+                # else: no Organization entity declared -> skip entirely
 
             # -------------------------------------------------------------
             # EI-03: Name, Address, Phone (NAP) Consistency Across Pages

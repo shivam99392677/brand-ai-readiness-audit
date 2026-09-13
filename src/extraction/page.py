@@ -243,7 +243,35 @@ def extract_page_content(html_content: str, url: str) -> Dict[str, Any]:
     # Extract contact candidates
     emails = sorted(list(set(re.findall(EMAIL_REGEX, normalized_text))))
     raw_phones = re.findall(PHONE_REGEX, normalized_text)
-    phones = sorted(list(set(p.strip() for p in raw_phones if len(re.sub(r"\D", "", p)) >= 7)))
+
+    def _is_plausible_phone(candidate: str) -> bool:
+        """Filters out non-phone digit sequences (year ranges, version strings, IDs).
+
+        A plausible phone number must either:
+        - start with '+' (international format), or
+        - contain parentheses (US-style area code), or
+        - have exactly 10-11 digits in phone-like grouping, AND
+        - must NOT look like a year range (e.g. 1998-2001) or a dotted version string.
+        """
+        c = candidate.strip()
+        digits = re.sub(r"\D", "", c)
+        if len(digits) < 10 or len(digits) > 15:
+            return False
+        # Reject year ranges: two 4-digit year-like tokens (19xx/20xx) joined by a separator
+        if re.fullmatch(r"(?:19|20)\d{2}\s*[-\u2013]\s*(?:19|20)\d{2}", c):
+            return False
+        # Reject dotted version strings (e.g. 3.11.4.1) — phones use -, space, or ()
+        if re.fullmatch(r"[\d.]+", c) and c.count(".") >= 2:
+            return False
+        if c.startswith("+") or "(" in c:
+            return True
+        # Bare sequences MUST contain a separator (dash/space) between groups —
+        # contiguous 10-11 digit runs in prose are IDs/counts, not phones.
+        if re.search(r"\d[-\s]\d", c):
+            return len(digits) in (10, 11, 12, 13)
+        return False
+
+    phones = sorted(list(set(p.strip() for p in raw_phones if _is_plausible_phone(p))))
 
     contact_candidates: List[ContactCandidate] = []
     provenance_list: List[Provenance] = []

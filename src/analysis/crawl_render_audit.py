@@ -355,6 +355,18 @@ def audit_crawl_render_skill(
 
     # CR-005: Page Title
     title_val = parser.title_text
+    # Fallback: the crawler's own metadata extractor may have captured a title
+    # (e.g. og:title / site_name) even when the strict <head><title> parse missed
+    # it. Never report "missing <title>" when a title exists in crawl metadata.
+    manifest_title = None
+    if crawl_manifest is not None and hasattr(crawl_manifest, "pages"):
+        for p in crawl_manifest.pages:
+            if getattr(p, "url", "") == url or getattr(p, "depth", 1) == 0:
+                manifest_title = getattr(p, "title", None)
+                if manifest_title:
+                    break
+    if not title_val and manifest_title:
+        title_val = manifest_title
     title_len = len(title_val) if title_val else 0
     if not title_val or title_len == 0:
         ev5 = Evidence(

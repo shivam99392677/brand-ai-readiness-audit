@@ -1,42 +1,42 @@
 {
   "site": "example.com",
-  "audited_at": "2026-09-12T17:48:43Z",
+  "audited_at": "2026-09-13T06:00:42Z",
   "summary": {
     "total_findings": 5,
     "critical": 0,
-    "high": 0,
-    "medium": 2,
+    "high": 1,
+    "medium": 1,
     "low": 3
   },
   "findings": [
     {
       "id": "F-001",
-      "title": "Missing External Entity Corroboration Links",
-      "severity": "medium",
-      "evidence": "No external sameAs profiles or Wikidata Knowledge Graph references were detected on the domain to corroborate brand identity.",
+      "title": "Sitemap Discovery",
+      "severity": "high",
+      "evidence": "Sitemap request returned status 404, expected 200. Observed: [GET sitemap.xml] status_code: 404",
       "suggested_action": {
-        "summary": "Add sameAs URLs to Organization schema linking to authoritative profiles (Wikidata, Wikipedia, Crunchbase, verified social profiles) for cross-platform corroboration.",
-        "priority": "medium"
+        "summary": "Provide a valid sitemap.xml accessible at the site root.",
+        "priority": "high"
       },
-      "check_id": "FC-03",
-      "category": "freshness-corroboration",
+      "check_id": "CR-013",
+      "category": "sitemap-audit",
       "affected_urls": [
-        "https://example.com/"
+        "https://example.com/sitemap.xml"
       ]
     },
     {
       "id": "F-002",
-      "title": "Missing Canonical sameAs Social Profiles",
+      "title": "AI Bot Blocking via robots.txt",
       "severity": "medium",
-      "evidence": "No sameAs entity reference links were discovered in Organization schema or structured markup.",
+      "evidence": "robots.txt returned status 404, expected 200. Observed: [GET robots.txt] status_code: 404",
       "suggested_action": {
-        "summary": "Add sameAs URLs to Organization schema linking to official social profiles and Knowledge Graph entities.",
+        "summary": "Provide a valid robots.txt accessible at the site root.",
         "priority": "medium"
       },
-      "check_id": "EI-02",
-      "category": "entity-identity-audit",
+      "check_id": "CR-014",
+      "category": "bot-block-audit",
       "affected_urls": [
-        "https://example.com/"
+        "https://example.com/robots.txt"
       ]
     },
     {
@@ -58,7 +58,7 @@
       "id": "F-004",
       "title": "Discoverable Internal Links",
       "severity": "low",
-      "evidence": "No discoverable internal links were found in the HTML anchors.",
+      "evidence": "No discoverable internal links were found in the HTML anchors. Observed: [<a href> tags] internal_link_count: 0, external_link_count: 1, js_nav_link_count: 0",
       "suggested_action": {
         "summary": "Expose internal site pages via standard HTML anchor links.",
         "priority": "low"
@@ -73,7 +73,7 @@
       "id": "F-005",
       "title": "Canonical URL Declaration",
       "severity": "low",
-      "evidence": "No canonical URL link tag (<link rel='canonical'>) was declared.",
+      "evidence": "No canonical URL link tag (<link rel='canonical'>) was declared. Observed: [<head> > <link rel='canonical'>] canonical_url: None, target_url: https://example.com/",
       "suggested_action": {
         "summary": "Add a self-referential canonical URL tag.",
         "priority": "low"

@@ -225,9 +225,17 @@ class EntityExtractor:
             for em in re.findall(email_pattern, p_str):
                 emails_found.add(em)
             for ph in re.findall(phone_pattern, p_str):
-                # Filter out pure numbers or false positives
+                # Filter out non-phone digit sequences (IDs, counts, year ranges).
+                # A plausible phone starts with '+', has parentheses, or contains
+                # a separator between digit groups. Contiguous bare digit runs in
+                # prose are not phones.
                 digits = re.sub(r"\D", "", ph)
-                if len(digits) >= 10:
+                c = ph.strip()
+                if len(digits) < 10 or len(digits) > 15:
+                    continue
+                if re.fullmatch(r"(?:19|20)\d{2}\s*[-\u2013]\s*(?:19|20)\d{2}", c):
+                    continue
+                if c.startswith("+") or "(" in c or re.search(r"\d[-\s]\d", c):
                     phones_found.add(ph)
 
         for email_str in sorted(list(emails_found)):

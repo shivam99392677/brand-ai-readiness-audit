@@ -244,23 +244,33 @@ class FreshnessCorroborationAuditor:
                     # Skip unreachable sources gracefully without crashing
                     pass
 
-            # 3b. If no sameAs or Wikidata found on primary site
+            # 3b. Corroboration gap policy:
+            # - Only a real DEFECT when declared sameAs/Wikidata links exist and are dead/wrong.
+            # - Missing sameAs is a LOW suggestion ONLY when an Organization/Brand entity
+            #   is actually declared (so sameAs could be attached to it).
+            # - Sites with no Organization entity at all (e.g. placeholder domains) are
+            #   NOT trust failures and must be skipped entirely.
             if not same_as_links and not wikidata_evs:
-                findings.append(Finding(
-                    skill="freshness-corroboration",
-                    check_id="FC-03",
-                    title="Missing External Entity Corroboration Links",
-                    status=FindingStatus.WARNING,
-                    severity=FindingSeverity.MEDIUM,
-                    description="No external sameAs profiles or Wikidata Knowledge Graph references were detected on the domain to corroborate brand identity.",
-                    evidence=[Evidence(
-                        source_url=website.start_url if website else "https://example.com",
-                        evidence_type="missing_corroboration",
-                        observed={"same_as_count": 0, "wikidata_count": 0},
-                        location="Schema.org sameAs",
-                    )],
-                    recommendation="Add sameAs URLs to Organization schema linking to authoritative profiles (Wikidata, Wikipedia, Crunchbase, verified social profiles) for cross-platform corroboration.",
-                ))
+                has_org_entity = any(
+                    (ev.data.get("name") or "").strip() for ev in entity_names
+                )
+                if has_org_entity:
+                    findings.append(Finding(
+                        skill="freshness-corroboration",
+                        check_id="FC-03",
+                        title="Missing External Entity Corroboration Links",
+                        status=FindingStatus.WARNING,
+                        severity=FindingSeverity.LOW,
+                        description="Organization entity is declared but no external sameAs profiles or Wikidata Knowledge Graph references corroborate it.",
+                        evidence=[Evidence(
+                            source_url=website.start_url if website else "https://example.com",
+                            evidence_type="missing_corroboration",
+                            observed={"same_as_count": 0, "wikidata_count": 0},
+                            location="Schema.org sameAs",
+                        )],
+                        recommendation="Add sameAs URLs to Organization schema linking to authoritative profiles (Wikidata, Wikipedia, Crunchbase, verified social profiles) for cross-platform corroboration.",
+                    ))
+                # else: no Organization entity declared -> skip entirely (not a trust failure)
             elif any(e.observed.get("status") == 404 for e in corroboration_evs):
                 findings.append(Finding(
                     skill="freshness-corroboration",

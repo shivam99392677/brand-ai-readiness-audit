@@ -164,7 +164,13 @@ class EngagementAuditor:
             # EG-03: Interior Pages Lack Breadcrumb Context
             # -------------------------------------------------------------
             interior_pages_without_breadcrumbs: List[str] = []
-            for u_url, links_list in links_by_url.items():
+            crawled_interior_urls: Set[str] = set(links_by_url.keys()) | set(paragraphs_by_url.keys()) | set(headings_by_url.keys())
+            if website and hasattr(website, "pages") and website.pages:
+                for p in website.pages:
+                    if getattr(p, "url", ""):
+                        crawled_interior_urls.add(p.url)
+            for u_url in crawled_interior_urls:
+                links_list = links_by_url.get(u_url, [])
                 parsed = urlparse(u_url)
                 path_depth = len([p for p in parsed.path.strip("/").split("/") if p])
                 if path_depth >= 2:
@@ -176,6 +182,16 @@ class EngagementAuditor:
                         if "breadcrumb" in rel or "crumb" in anchor or "breadcrumbs" in anchor:
                             has_breadcrumb = True
                             break
+                    if not has_breadcrumb:
+                        # Visible parent-path navigation counts as breadcrumb context:
+                        # a link whose target is the page's parent path (e.g. /about/
+                        # on /about/team) gives the visitor a hierarchy to climb.
+                        parent_path = parsed.path.rstrip("/").rsplit("/", 1)[0]
+                        for l_ev in links_list:
+                            tgt = urlparse(l_ev.data.get("target_url", "") or "")
+                            if tgt.path and parent_path and tgt.path.rstrip("/") == parent_path:
+                                has_breadcrumb = True
+                                break
                     if not has_breadcrumb:
                         interior_pages_without_breadcrumbs.append(u_url)
 

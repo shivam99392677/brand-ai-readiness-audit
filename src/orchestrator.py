@@ -48,10 +48,27 @@ CORE_SKILL_REGISTRY: Dict[str, Callable[..., List[Finding]]] = {
     "engagement-audit": run_engagement_audit,
 }
 
-# Extended skills (optional)
+# Extended skills (optional) — adapters so legacy (url, headers) signatures
+# conform to the canonical (evidence, website) call contract.
+def _run_sitemap_audit_adapter(evidence: Any = None, website: Any = None, **kwargs) -> List[Finding]:
+    url = (getattr(website, "start_url", None) if website else None) or "https://example.com"
+    headers: Dict[str, str] = {}
+    if website is not None and getattr(website, "pages", None):
+        headers = getattr(website.pages[0], "headers", {}) or {}
+    return run_sitemap_audit(url=url, headers=headers)
+
+
+def _run_bot_block_audit_adapter(evidence: Any = None, website: Any = None, **kwargs) -> List[Finding]:
+    url = (getattr(website, "start_url", None) if website else None) or "https://example.com"
+    headers: Dict[str, str] = {}
+    if website is not None and getattr(website, "pages", None):
+        headers = getattr(website.pages[0], "headers", {}) or {}
+    return run_bot_block_audit(url=url, headers=headers)
+
+
 EXTENDED_SKILL_REGISTRY: Dict[str, Callable[..., List[Finding]]] = {
-    "sitemap-audit": run_sitemap_audit,
-    "bot-block-audit": run_bot_block_audit,
+    "sitemap-audit": _run_sitemap_audit_adapter,
+    "bot-block-audit": _run_bot_block_audit_adapter,
 }
 
 # Default registry used when no custom registry is provided
@@ -195,7 +212,9 @@ def main():
     args = parser.parse_args()
 
     config = CrawlConfig(max_pages=args.max_pages, max_depth=args.max_depth)
-    orchestrator = AuditOrchestrator(crawl_config=config)
+    # Judges run the default CLI: extended skills (sitemap + AI bot blocks) MUST
+    # be part of the default audit path, no flags required.
+    orchestrator = AuditOrchestrator(crawl_config=config, enable_extended_skills=True)
     report = orchestrator.execute_audit(target_url=args.url, output_file=args.output)
     
     # Also print the Adobe format report to stdout

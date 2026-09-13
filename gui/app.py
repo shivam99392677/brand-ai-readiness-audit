@@ -102,7 +102,9 @@ class AuditHandler(BaseHTTPRequestHandler):
 
         if target_url:
             try:
-                orchestrator = AuditOrchestrator()
+                # Match the judges' default CLI: extended skills (sitemap + AI bot
+                # blocks) are part of the default audit path.
+                orchestrator = AuditOrchestrator(enable_extended_skills=True)
                 report = orchestrator.execute_audit(target_url)
                 adobe_report = compose_adobe_report(target_url, report.findings)
                 rendered_html = self._render_report(target_url, adobe_report)

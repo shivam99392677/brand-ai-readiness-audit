@@ -74,9 +74,15 @@ def run_fact_quality_audit(
                     text_by_url.setdefault(ev_url, []).append((text, ev_id, loc))
 
                     # Extract price mentions
-                    prices = re.findall(PRICE_REGEX, text, re.IGNORECASE)
-                    for pr in prices:
-                        price_claims.setdefault(ev_url, set()).add((pr.strip(), ev_id))
+                    # Extract price mentions (with magnitude-suffix guard: "$1.9tn",
+                    # "$40bn", "US$3 million" are monetary MAGNITUDES, not offer
+                    # prices, and must not seed cross-page price contradictions)
+                    for m in re.finditer(PRICE_REGEX, text, re.IGNORECASE):
+                        pr = m.group(0).strip()
+                        tail = text[m.end():m.end() + 4].lower()
+                        if re.match(r"\s*(?:tn|t\b|bn|b\b|mm?\b|million|billion|trillion|k\b)", tail):
+                            continue
+                        price_claims.setdefault(ev_url, set()).add((pr, ev_id))
 
                     # Extract refund days
                     refunds = re.findall(REFUND_REGEX, text, re.IGNORECASE)
@@ -115,6 +121,13 @@ def run_fact_quality_audit(
                     p1_set = {p[0] for p in price_claims[u1]}
                     p2_set = {p[0] for p in price_claims[u2]}
                     if p1_set != p2_set and not p1_set.issubset(p2_set) and not p2_set.issubset(p1_set):
+                        # Skip cross-currency pairs: a ₹ price on one page and a $
+                        # price on another reflects regional pricing, not a factual
+                        # contradiction about the same offering.
+                        def _cur(ps):
+                            return {p[0] for p in ps if not p[0][0].isdigit()}
+                        if _cur(p1_set) and _cur(p2_set) and _cur(p1_set).isdisjoint(_cur(p2_set)):
+                            continue
                         ev_ids1 = [p[1] for p in price_claims[u1]]
                         ev_ids2 = [p[1] for p in price_claims[u2]]
                         contradiction_details.append(

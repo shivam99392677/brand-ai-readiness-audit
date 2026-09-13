@@ -113,13 +113,15 @@ Observation / Evidence
 
 ---
 
-## 8. On-Site AI Engagement Readiness
+## 8. On-Site Visitor Engagement & Conversion (EG-01..04)
 
 | Attribute | Definition / Specification |
 | :--- | :--- |
-| **Category** | On-Site AI Engagement Readiness |
-| **Signal** | OpenAPI / REST spec availability, `llms.txt` presence, conversational search endpoints, structured action manifests. |
-| **Evidence** | `/llms.txt` HTTP GET response, `/openapi.json` presence, search API response formats, chat widget protocols. |
-| **Severity** | **Medium** (missing `llms.txt` or structured developer endpoints) to **Low** (non-standard search query params). |
-| **Scoring** | *Placeholder* (e.g., Binary/Tiered capability score for machine-agent interaction standards). |
-| **False-Positive Considerations** | Security-restricted internal APIs, non-public enterprise portals. |
+| **Category** | On-Site Visitor Engagement & Conversion |
+| **Signal** | Above-the-fold clarity (who/what/next), navigation coverage vs claimed offerings, breadcrumb presence on interior pages, real conversion CTAs vs "Learn More" loops. |
+| **Evidence** | H1/heading text, above-fold paragraph content, nav anchor inventory vs page claims, breadcrumb trail DOM elements, CTA anchor text and href targets. |
+| **Severity** | **High** (no clear who/what/next on content-rich landing page) to **Medium** (missing breadcrumbs on deep interior pages, nav/offerings mismatch, circular Learn More loops with no signup/buy/contact/demo CTA). |
+| **Scoring** | *Placeholder* (e.g., Orientation score combining clarity, navigation coverage, breadcrumb depth coverage, and CTA actionability). |
+| **False-Positive Considerations** | JS shells with <80 words are owned by Crawl & Render (EG-01 does not double-flag); single-page sites legitimately lacking breadcrumbs; legal/privacy pages excluded from CTA analysis. |
+
+**Scope note:** This skill evaluates *human visitor* orientation and conversion only. It deliberately does NOT flag missing `/llms.txt`, `/openapi.json`, chat widgets, or conversational endpoints — those are out of the official Round 3 on-site engagement scope.

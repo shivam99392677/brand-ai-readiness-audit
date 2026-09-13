@@ -21,12 +21,15 @@ def run_sitemap_audit(url: str, headers: Optional[Dict[str, str]] = None) -> Lis
         return [Finding(
             skill="sitemap-audit",
             check_id="CR-013",
-            title="Sitemap Discovery",
+            title="sitemap.xml Unreachable — Sitemap Check Not Scored",
             status=FindingStatus.ERROR,
-            severity=FindingSeverity.HIGH,
-            description="Failed to fetch sitemap.xml due to network error.",
+            severity=FindingSeverity.LOW,
+            description=(
+                f"sitemap.xml could not be fetched ({str(e)[:120]}); sitemap presence "
+                "could not be verified and this check is not scored."
+            ),
             evidence=[ev],
-            recommendation="Ensure sitemap.xml is reachable and served without errors.",
+            recommendation="Verify sitemap.xml reachability; re-run the audit to score sitemap discovery.",
         )]
     if resp.status_code != 200:
         ev = Evidence(
@@ -36,15 +39,26 @@ def run_sitemap_audit(url: str, headers: Optional[Dict[str, str]] = None) -> Lis
             expected={"status_code": 200},
             location="GET sitemap.xml",
         )
+        # A missing sitemap (404) is a discoverability suggestion, not a site
+        # failure: many small sites rely on robots.txt + links alone. Also note
+        # that a sitemap may still be declared inside robots.txt at another URL.
         return [Finding(
             skill="sitemap-audit",
             check_id="CR-013",
-            title="Sitemap Discovery",
-            status=FindingStatus.FAIL,
-            severity=FindingSeverity.HIGH,
-            description=f"Sitemap request returned status {resp.status_code}, expected 200.",
+            title=f"No Sitemap at /sitemap.xml (HTTP {resp.status_code})",
+            status=FindingStatus.WARNING,
+            severity=FindingSeverity.LOW,
+            description=(
+                f"GET {sitemap_url} returned HTTP {resp.status_code}, so no default-location "
+                "sitemap was found. This limits bulk URL discovery for crawlers but does not "
+                "block indexing by itself. Check whether a sitemap is declared in robots.txt "
+                "at a non-default URL."
+            ),
             evidence=[ev],
-            recommendation="Provide a valid sitemap.xml accessible at the site root.",
+            recommendation=(
+                "Publish a sitemap.xml at the site root (or declare 'Sitemap: <url>' in robots.txt) "
+                "listing canonical indexable URLs."
+            ),
         )]
     # Simple XML parsing for <loc> entries
     content = resp.text

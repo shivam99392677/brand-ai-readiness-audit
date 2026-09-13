@@ -104,6 +104,24 @@ class AdobeReportComposer:
                 seen_keys.add(key)
                 deduped_findings.append(f)
 
+        # 3b. Cross-skill semantic dedup: FC-03 and EI-02 both report missing
+        # sameAs corroboration. Keep only the first occurrence of the same
+        # semantic issue (normalized title match on the sameAs-missing family).
+        SAMEAS_MISSING_TITLES = {
+            "missing external entity corroboration links",
+            "missing canonical sameas social profiles",
+        }
+        seen_sameas_missing = False
+        semantically_deduped: List[Finding] = []
+        for f in deduped_findings:
+            norm_title = f.title.strip().lower()
+            if norm_title in SAMEAS_MISSING_TITLES:
+                if seen_sameas_missing:
+                    continue  # duplicate of the same missing-sameAs issue
+                seen_sameas_missing = True
+            semantically_deduped.append(f)
+        deduped_findings = semantically_deduped
+
         # 4. Sort by severity: critical > high > medium > low
         def get_sev_weight(f: Finding) -> int:
             sev_str = f.severity.value.lower() if isinstance(f.severity, FindingSeverity) else str(f.severity).lower()
@@ -144,12 +162,14 @@ class AdobeReportComposer:
                     ev_descriptions.append(str(ev.observed))
 
             evidence_summary = f.description
-            if ev_descriptions and len(evidence_summary) < 50:
+            # Evidence MUST be traceable: always append observed details so the
+            # evidence string carries a URL and/or count.
+            if ev_descriptions:
                 evidence_summary += f" Observed: {'; '.join(ev_descriptions[:2])}"
 
             suggested_action = {
                 "summary": f.recommendation or "Review and resolve the technical configuration issue.",
-                "priority": PRIORITY_MAP.get(sev_str, "P3"),
+                "priority": PRIORITY_MAP.get(sev_str, "medium"),
             }
 
             adobe_item = {

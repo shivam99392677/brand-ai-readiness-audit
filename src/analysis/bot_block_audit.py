@@ -21,12 +21,15 @@ def run_bot_block_audit(url: str, headers: Optional[Dict[str, str]] = None) -> L
         return [Finding(
             skill="bot-block-audit",
             check_id="CR-014",
-            title="AI Bot Blocking via robots.txt",
+            title="robots.txt Unreachable — Bot Blocking Not Scored",
             status=FindingStatus.ERROR,
-            severity=FindingSeverity.HIGH,
-            description="Failed to fetch robots.txt due to network error.",
+            severity=FindingSeverity.LOW,
+            description=(
+                f"robots.txt could not be fetched ({str(e)[:120]}); whether AI bots are blocked "
+                "could not be verified and this check is not scored."
+            ),
             evidence=[ev],
-            recommendation="Ensure robots.txt is reachable and does not block AI bots.",
+            recommendation="Verify robots.txt reachability; re-run the audit to score bot access rules.",
         )]
     if resp.status_code != 200:
         ev = Evidence(
@@ -36,15 +39,26 @@ def run_bot_block_audit(url: str, headers: Optional[Dict[str, str]] = None) -> L
             expected={"status_code": 200},
             location="GET robots.txt",
         )
+        # A missing/forbidden robots.txt is NOT evidence that AI bots are blocked:
+        # crawlers fall back to default rules. Report reachability only (LOW/INFO),
+        # and never under the "AI Bot Blocking" title (which requires explicit
+        # Disallow rules to be factually true).
         return [Finding(
             skill="bot-block-audit",
             check_id="CR-014",
-            title="AI Bot Blocking via robots.txt",
+            title=f"robots.txt Not Accessible (HTTP {resp.status_code})",
             status=FindingStatus.WARNING,
-            severity=FindingSeverity.MEDIUM,
-            description=f"robots.txt returned status {resp.status_code}, expected 200.",
+            severity=FindingSeverity.LOW,
+            description=(
+                f"robots.txt returned HTTP {resp.status_code}. No explicit AI-bot rules were "
+                "found (the file does not exist or is not served); AI crawler access defaults apply. "
+                "This is a reachability observation, not confirmed bot blocking."
+            ),
             evidence=[ev],
-            recommendation="Provide a valid robots.txt accessible at the site root.",
+            recommendation=(
+                "Optionally publish a robots.txt at the site root declaring explicit AI bot rules "
+                "(GPTBot, ClaudeBot, PerplexityBot) so crawler access is intentional and auditable."
+            ),
         )]
     content = resp.text.lower()
     target_bots = ["gptbot", "claudebot", "perplexitybot", "google-extended"]

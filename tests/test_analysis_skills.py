@@ -224,15 +224,38 @@ def test_freshness_fc02_staleness_and_footer_copyright_ignored():
 
 
 def test_freshness_fc03_offline_public_corroboration_resilience():
-    """Verify FC-03 gracefully handles offline / unreachable corroboration endpoints."""
+    """Verify FC-03 gracefully handles offline / unreachable corroboration endpoints.
+
+    Policy: sites with NO declared Organization entity (e.g. placeholder domains)
+    must NOT emit a missing-sameAs trust failure at all.
+    """
     ext_res = create_mock_extraction_result([
         {"url": "https://example.com", "title": "Example", "paragraphs": ["Content"]}
     ])
     # Should not raise exception
     findings = run_freshness_corroboration(ext_res)
     fc03 = [f for f in findings if f.check_id == "FC-03"]
-    assert len(fc03) >= 1
-    assert fc03[0].status in (FindingStatus.PASS, FindingStatus.WARNING, FindingStatus.NOT_APPLICABLE)
+    # No Organization entity declared -> FC-03 must be skipped entirely
+    assert len(fc03) == 0
+
+
+def test_freshness_fc03_missing_sameas_low_only_with_org_entity():
+    """Verify FC-03 missing-sameAs is at most a LOW suggestion when an Organization entity exists."""
+    json_ld_str = '{"@context": "https://schema.org", "@type": "Organization", "name": "Acme Corp"}'
+    pages_data = [
+        {
+            "url": "https://example.com/",
+            "title": "Acme Corp",
+            "jsonld_raw_blocks": [json_ld_str],
+            "paragraphs": ["Acme Corp builds enterprise tools."],
+        }
+    ]
+    ext_res = create_mock_extraction_result(pages_data)
+    findings = run_freshness_corroboration(ext_res)
+
+    fc03 = [f for f in findings if f.check_id == "FC-03" and f.status in (FindingStatus.FAIL, FindingStatus.WARNING)]
+    if fc03:
+        assert fc03[0].severity == FindingSeverity.LOW
 
 
 # ==============================================================================
